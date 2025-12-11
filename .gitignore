@@ -1,0 +1,18 @@
+# Build artifacts
+bin/
+tmp/
+air.log
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.envrc
+.venv/
+
+# Custom
+temp*

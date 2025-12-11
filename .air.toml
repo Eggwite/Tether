@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/bin/server.exe ./cmd"
+entrypoint = "./tmp/bin/server.exe"
+delay = 1000
+include_ext = ["go"]
+exclude_dir = ["tmp", "vendor"]
+
+[log]
+time = true
+
+[env]
+PORT = "8080"

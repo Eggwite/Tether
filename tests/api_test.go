@@ -9,7 +9,6 @@ import (
 
 	"tether/src/api"
 	"tether/src/store"
-	"tether/src/utils"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -30,12 +29,15 @@ func TestSnapshotHandler(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 
-	var resp utils.Response
+	var resp struct {
+		Success bool               `json:"success"`
+		Data    store.PresenceData `json:"data"`
+	}
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 		t.Fatalf("decode failed: %v", err)
 	}
 
-	if !resp.Success || resp.Data == nil || resp.Data.DiscordStatus != "online" {
+	if !resp.Success || resp.Data.DiscordStatus != "online" {
 		t.Fatalf("unexpected payload: %+v", resp)
 	}
 }

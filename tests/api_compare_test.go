@@ -12,13 +12,13 @@ import (
 )
 
 type UserResponse struct {
-	Success bool           `json:"success"`
-	Data    map[string]any `json:"data"`
+	Success bool `json:"success"`
+	Data    any  `json:"data"`
 }
 
 type Response struct {
-	Success bool           `json:"success"`
-	Data    map[string]any `json:"data"`
+	Success bool `json:"success"`
+	Data    any  `json:"data"`
 }
 
 func TestCompareLocalAndLanyardAPI(t *testing.T) {
@@ -55,12 +55,22 @@ func TestCompareLocalAndLanyardAPI(t *testing.T) {
 		t.Fatalf("One or both APIs did not return success")
 	}
 
+	// Assert Data to map[string]any for ranging
+	lanyardMap, ok := lanyardData.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("Lanyard Data is not a map")
+	}
+	localMap, ok := localData.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("Local Data is not a map")
+	}
+
 	// Compare fields, ignoring rapidly changing ones and unsupported ones
-	for k, v := range lanyardData.Data {
+	for k, v := range lanyardMap {
 		if shouldIgnoreKey(k) {
 			continue // skip time-based fields and Lanyard KV (unsupported)
 		}
-		if localVal, ok := localData.Data[k]; ok {
+		if localVal, ok := localMap[k]; ok {
 			if !equalValues(localVal, v) {
 				t.Errorf("Field %s mismatch: local=%v lanyard=%v", k, localVal, v)
 			}

@@ -12,7 +12,25 @@ func Success(p store.PresenceData) Response {
 }
 
 // NotFound creates an error response when a user's presence isn't available.
-// Common cases: user is offline, not in any tracked guilds, or ID is invalid.
-func NotFound() Response {
-	return Response{Success: false, Error: "user not found"}
+// Common cases: user is not in any tracked guilds, or ID is invalid.
+func UserNotFound() Response {
+	return Response{
+		Success: false,
+		Error: map[string]any{
+			"code":    "user_not_monitored",
+			"message": "User is not being monitored by Tether",
+		},
+	}
+}
+
+// PageNotFound creates an error response for unknown routes.
+// Used when a requested API endpoint does not exist.
+func PageNotFound() Response {
+	return Response{
+		Success: false,
+		Error: map[string]any{
+			"code":    "page_not_found",
+			"message": "Route does not exist",
+		},
+	}
 }

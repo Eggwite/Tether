@@ -2,7 +2,19 @@ package utils
 
 import (
 	"encoding/json"
+	"net/http"
 )
+
+// WriteJSON writes the payload as JSON with the given status code.
+func WriteJSON(w http.ResponseWriter, status int, payload any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(payload)
+}
+
+// Below are utility functions for handling JSON data
 
 // GetString safely extracts a string from any value.
 // Required because JSON unmarshal into interface{} preserves concrete string types,

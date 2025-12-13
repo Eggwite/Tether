@@ -67,9 +67,9 @@ type PrettyPresence struct {
 // PublicFields is the public envelope shape used by REST and WebSocket replies
 // (success flag plus optional data or error), matching Lanyard's public API.
 type PublicFields struct {
-	Success bool          `json:"success"`
-	Data    *PresenceData `json:"data,omitempty"`
-	Error   string        `json:"error,omitempty"`
+	Success bool `json:"success"`
+	Data    any  `json:"data,omitempty"`
+	Error   any  `json:"error,omitempty"`
 }
 
 // PresenceEvent represents a store mutation.

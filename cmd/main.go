@@ -38,7 +38,11 @@ func main() {
 	r.Get("/v1/users/{userID}", api.SnapshotHandler{Store: st}.ServeHTTP)
 	r.Get("/healthz", api.HealthHandler{}.ServeHTTP)
 	r.Handle("/socket", wsServer)
-
+	// Custom 404 handler for API routes
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		utils.WriteJSON(w, http.StatusNotFound, utils.PageNotFound())
+	})
+	// HTTP Server configuration
 	srv := &http.Server{
 		Addr:              ":" + port,
 		Handler:           r,
@@ -47,7 +51,7 @@ func main() {
 		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
-
+	// Launch Discord bot
 	discordSession, err := bot.Launch(os.Getenv("DISCORD_TOKEN"), st)
 	if err != nil {
 		utils.Log.WithError(err).Fatal("failed to start Discord bot")

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"tether/src/store"
@@ -18,30 +17,23 @@ type SnapshotHandler struct {
 func (h SnapshotHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userID")
 	if userID == "" {
-		h.writeJSON(w, http.StatusBadRequest, utils.Response{Success: false, Error: "user id missing"})
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Response{Success: false, Error: "user id missing"})
 		return
 	}
 	presence, ok := h.Store.GetPresence(userID)
 	if !ok {
-		h.writeJSON(w, http.StatusNotFound, utils.NotFound())
+		utils.WriteJSON(w, http.StatusNotFound, utils.UserNotFound())
 		return
 	}
-	h.writeJSON(w, http.StatusOK, utils.Success(presence))
-}
-
-func (SnapshotHandler) writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(false) // keep characters like '&' readable
-	_ = enc.Encode(payload)
+	utils.WriteJSON(w, http.StatusOK, utils.Success(presence))
 }
 
 // HealthHandler is a simple readiness probe.
 type HealthHandler struct{}
 
 func (HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	utils.WriteJSON(w, http.StatusOK, utils.Response{
+		Success: true,
+		Data:    map[string]string{"status": "ok"},
+	})
 }

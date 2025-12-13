@@ -30,7 +30,7 @@ func (h SnapshotHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (SnapshotHandler) writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false) // keep characters like '&' readable
@@ -41,7 +41,7 @@ func (SnapshotHandler) writeJSON(w http.ResponseWriter, status int, payload any)
 type HealthHandler struct{}
 
 func (HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }

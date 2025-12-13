@@ -1,4 +1,4 @@
-package utils
+package logging
 
 import (
 	"os"
@@ -47,6 +47,7 @@ func Configure() {
 		"app_env":   env,
 		"log_level": Log.GetLevel().String(),
 	}).Debug("logger configured")
+
 }
 
 func setLogLevelFromString(level string) {

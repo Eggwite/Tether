@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"tether/src/concurrency"
+	"tether/src/logging"
 	"tether/src/store"
 	"tether/src/utils"
 
@@ -55,6 +57,8 @@ type connState struct {
 	subs          map[string]struct{}
 	lastHeartbeat time.Time
 	misses        int
+	mu            sync.Mutex // protects lastHeartbeat and misses
+	writeMu       sync.Mutex // serializes writes to the websocket.Conn
 }
 
 // Server manages WebSocket subscriptions keyed by user ID. Clients should
@@ -85,11 +89,11 @@ func NewServer(store *store.PresenceStore) *Server {
 	}
 	_, events, cancel := store.Subscribe()
 	ws.cancel = cancel
-	go func() {
+	concurrency.GoSafe(func() {
 		for evt := range events {
 			ws.broadcast(evt)
 		}
-	}()
+	})
 	return ws
 }
 
@@ -100,7 +104,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		utils.Log.WithError(err).Warn("ws upgrade failed")
+		logging.Log.WithError(err).Warn("ws upgrade failed")
 		return
 	}
 	// Cap inbound frame size to bound decompression/processing work.
@@ -122,7 +126,7 @@ func (s *Server) registerConn(conn *websocket.Conn) {
 
 func (s *Server) sendHello(conn *websocket.Conn) {
 	hello := wsMessage{Op: opHello, D: helloPayload{HeartbeatInterval: heartbeatIntervalMs}}
-	_ = conn.WriteJSON(hello)
+	_ = s.writeJSON(conn, hello)
 }
 
 func (s *Server) handleConn(conn *websocket.Conn) {
@@ -137,7 +141,7 @@ func (s *Server) handleConn(conn *websocket.Conn) {
 			s.handleInit(conn, msg.D)
 		case opHeartbeat:
 			s.touchHeartbeat(conn)
-			_ = conn.WriteJSON(wsMessage{Op: opHeartbeat})
+			_ = s.writeJSON(conn, wsMessage{Op: opHeartbeat})
 		default:
 			s.closeWithCode(conn, 4004, "unknown_opcode")
 			return
@@ -196,10 +200,14 @@ func (s *Server) decodeInitPayload(raw any) initPayload {
 
 func (s *Server) touchHeartbeat(conn *websocket.Conn) {
 	s.stateMu.Lock()
-	if state, ok := s.state[conn]; ok {
-		state.lastHeartbeat = time.Now()
-	}
+	state, ok := s.state[conn]
 	s.stateMu.Unlock()
+	if !ok {
+		return
+	}
+	state.mu.Lock()
+	state.lastHeartbeat = time.Now()
+	state.mu.Unlock()
 }
 
 func (s *Server) watchHeartbeats(conn *websocket.Conn) {
@@ -212,7 +220,8 @@ func (s *Server) watchHeartbeats(conn *websocket.Conn) {
 		if !ok {
 			return
 		}
-		// Count missed beats; drop after threshold
+		// Count missed beats; drop after threshold. Access guarded by state.mu
+		state.mu.Lock()
 		timeSinceBeat := time.Since(state.lastHeartbeat)
 		expected := time.Duration(heartbeatIntervalMs)*time.Millisecond + heartbeatJitter
 		if timeSinceBeat > expected {
@@ -220,8 +229,11 @@ func (s *Server) watchHeartbeats(conn *websocket.Conn) {
 		} else {
 			state.misses = 0
 		}
-		if state.misses >= maxHeartbeatMisses || timeSinceBeat > time.Duration(heartbeatTimeoutMs)*time.Millisecond {
-			utils.Log.WithField("conn", conn.RemoteAddr().String()).Warn("ws heartbeat timeout")
+		misses := state.misses
+		state.mu.Unlock()
+
+		if misses >= maxHeartbeatMisses || timeSinceBeat > time.Duration(heartbeatTimeoutMs)*time.Millisecond {
+			logging.Log.WithField("conn", conn.RemoteAddr().String()).Warn("ws heartbeat timeout")
 			s.cleanupConn(conn)
 			return
 		}
@@ -231,12 +243,36 @@ func (s *Server) watchHeartbeats(conn *websocket.Conn) {
 func (s *Server) sendEvent(conn *websocket.Conn, event string, data any) {
 	msg := wsMessage{Op: opEvent, Seq: s.nextSeq(), T: event, D: data}
 	start := time.Now()
-	err := conn.WriteJSON(msg)
+	err := s.writeJSON(conn, msg)
 	sendLatency.Record(time.Since(start))
 	if err != nil {
-		utils.Log.WithError(err).Warn("ws send failed")
+		logging.Log.WithError(err).Warn("ws send failed")
 		go s.cleanupConn(conn)
 	}
+}
+
+func (s *Server) writeJSON(conn *websocket.Conn, v any) error {
+	s.stateMu.Lock()
+	state, ok := s.state[conn]
+	s.stateMu.Unlock()
+	if !ok {
+		return websocket.ErrCloseSent
+	}
+	state.writeMu.Lock()
+	defer state.writeMu.Unlock()
+	return conn.WriteJSON(v)
+}
+
+func (s *Server) writeControl(conn *websocket.Conn, messageType int, data []byte, deadline time.Time) error {
+	s.stateMu.Lock()
+	state, ok := s.state[conn]
+	s.stateMu.Unlock()
+	if !ok {
+		return websocket.ErrCloseSent
+	}
+	state.writeMu.Lock()
+	defer state.writeMu.Unlock()
+	return conn.WriteControl(messageType, data, deadline)
 }
 
 func (s *Server) broadcast(evt store.PresenceEvent) {
@@ -253,7 +289,7 @@ func (s *Server) broadcast(evt store.PresenceEvent) {
 		return
 	}
 
-	utils.Log.WithFields(logrus.Fields{
+	logging.Log.WithFields(logrus.Fields{
 		"user_id": evt.UserID,
 		"subs":    len(targets),
 		"removed": evt.Removed,
@@ -273,13 +309,20 @@ func (s *Server) broadcast(evt store.PresenceEvent) {
 
 func (s *Server) cleanupConn(conn *websocket.Conn) {
 	s.stateMu.Lock()
+	state, ok := s.state[conn]
 	delete(s.state, conn)
 	s.stateMu.Unlock()
-	conn.Close()
+	if ok {
+		state.writeMu.Lock()
+		_ = conn.Close()
+		state.writeMu.Unlock()
+	} else {
+		_ = conn.Close()
+	}
 }
 
 func (s *Server) closeWithCode(conn *websocket.Conn, code int, reason string) {
-	_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(code, reason), time.Now().Add(time.Second))
+	_ = s.writeControl(conn, websocket.CloseMessage, websocket.FormatCloseMessage(code, reason), time.Now().Add(time.Second))
 	s.cleanupConn(conn)
 }
 

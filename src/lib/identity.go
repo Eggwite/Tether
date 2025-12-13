@@ -3,6 +3,7 @@ package lib
 import (
 	"encoding/json"
 
+	"tether/src/logging"
 	"tether/src/store"
 	"tether/src/utils"
 
@@ -13,11 +14,11 @@ import (
 // buildDiscordUser constructs a DiscordUser from discordgo.User
 func buildDiscordUser(u *discordgo.User) store.DiscordUser {
 	if u == nil {
-		utils.Log.Warn("buildDiscordUser called with nil user")
+		logging.Log.Warn("buildDiscordUser called with nil user")
 		return store.DiscordUser{}
 	}
 
-	utils.Log.WithFields(logrus.Fields{
+	logging.Log.WithFields(logrus.Fields{
 		"user_id":  u.ID,
 		"username": u.Username,
 	}).Debug("Building Discord user from discordgo.User")
@@ -37,7 +38,7 @@ func buildDiscordUser(u *discordgo.User) store.DiscordUser {
 
 	if du.DisplayName == "" {
 		du.DisplayName = utils.FirstNonEmpty(du.GlobalName, du.Username)
-		utils.Log.WithFields(logrus.Fields{
+		logging.Log.WithFields(logrus.Fields{
 			"user_id":      du.ID,
 			"display_name": du.DisplayName,
 		}).Debug("Set display name from global name or username")
@@ -48,7 +49,7 @@ func buildDiscordUser(u *discordgo.User) store.DiscordUser {
 
 // MergeDiscordUser merges identity fields (canonical implementation).
 func MergeDiscordUser(base store.DiscordUser, incoming store.DiscordUser) store.DiscordUser {
-	utils.Log.WithFields(logrus.Fields{
+	logging.Log.WithFields(logrus.Fields{
 		"base_id":     base.ID,
 		"incoming_id": incoming.ID,
 	}).Debug("Merging Discord user data")
@@ -79,10 +80,10 @@ func MergeDiscordUser(base store.DiscordUser, incoming store.DiscordUser) store.
 
 // MergeRawUser extracts user/member data from raw JSON
 func MergeRawUser(st *store.PresenceStore, raw json.RawMessage) {
-	utils.Log.Debug("Processing raw user data")
+	logging.Log.Debug("Processing raw user data")
 	userMap, memberMap := utils.ExtractRawIdentity(raw)
 	if userMap == nil {
-		utils.Log.Warn("Failed to extract user identity from raw JSON")
+		logging.Log.Warn("Failed to extract user identity from raw JSON")
 		return
 	}
 	mergeRawUserFromMaps(st, userMap, memberMap)
@@ -90,16 +91,16 @@ func MergeRawUser(st *store.PresenceStore, raw json.RawMessage) {
 
 func mergeRawUserFromMaps(st *store.PresenceStore, userMap, memberMap map[string]any) {
 	if userMap == nil {
-		utils.Log.Debug("mergeRawUserFromMaps called with nil userMap")
+		logging.Log.Debug("mergeRawUserFromMaps called with nil userMap")
 		return
 	}
 	userID := utils.ExtractStringField(userMap, "id")
 	if userID == "" {
-		utils.Log.Warn("User map missing required 'id' field")
+		logging.Log.Warn("User map missing required 'id' field")
 		return
 	}
 
-	utils.Log.WithField("user_id", userID).Debug("Merging raw user data")
+	logging.Log.WithField("user_id", userID).Debug("Merging raw user data")
 
 	du := discordUserFromRaw(userMap, memberMap)
 	st.UpdatePresenceQuiet(userID, func(prev store.PresenceData) store.PresenceData {
@@ -107,7 +108,7 @@ func mergeRawUserFromMaps(st *store.PresenceStore, userMap, memberMap map[string
 		return prev
 	})
 
-	utils.Log.WithFields(logrus.Fields{
+	logging.Log.WithFields(logrus.Fields{
 		"user_id":      userID,
 		"display_name": du.DisplayName,
 	}).Info("Raw user data merged successfully")
@@ -115,39 +116,39 @@ func mergeRawUserFromMaps(st *store.PresenceStore, userMap, memberMap map[string
 
 // MergeChunkRawMembers processes GUILD_MEMBERS_CHUNK member list
 func MergeChunkRawMembers(st *store.PresenceStore, raw json.RawMessage) {
-	utils.Log.Debug("Processing GUILD_MEMBERS_CHUNK")
+	logging.Log.Debug("Processing GUILD_MEMBERS_CHUNK")
 
 	payload, ok := utils.UnmarshalToMap(raw)
 	if !ok {
-		utils.Log.Error("Failed to unmarshal GUILD_MEMBERS_CHUNK payload")
+		logging.Log.Error("Failed to unmarshal GUILD_MEMBERS_CHUNK payload")
 		return
 	}
 
 	membersVal, ok := payload["members"].([]any)
 	if !ok {
-		utils.Log.Warn("GUILD_MEMBERS_CHUNK missing 'members' array")
+		logging.Log.Warn("GUILD_MEMBERS_CHUNK missing 'members' array")
 		return
 	}
 
-	utils.Log.WithField("member_count", len(membersVal)).Info("Processing guild members chunk")
+	logging.Log.WithField("member_count", len(membersVal)).Info("Processing guild members chunk")
 
 	processedCount := 0
 	for _, entry := range membersVal {
 		memberMap, ok := entry.(map[string]any)
 		if !ok {
-			utils.Log.Debug("Skipping invalid member entry (not a map)")
+			logging.Log.Debug("Skipping invalid member entry (not a map)")
 			continue
 		}
 		userMap, _ := memberMap["user"].(map[string]any)
 		if userMap == nil {
-			utils.Log.Debug("Skipping member entry with nil user")
+			logging.Log.Debug("Skipping member entry with nil user")
 			continue
 		}
 		mergeRawUserFromMaps(st, userMap, memberMap)
 		processedCount++
 	}
 
-	utils.Log.WithFields(logrus.Fields{
+	logging.Log.WithFields(logrus.Fields{
 		"total_members":     len(membersVal),
 		"processed_members": processedCount,
 	}).Info("Guild members chunk processed")
@@ -156,7 +157,7 @@ func MergeChunkRawMembers(st *store.PresenceStore, raw json.RawMessage) {
 // discordUserFromRaw builds DiscordUser from raw JSON maps
 func discordUserFromRaw(user map[string]any, member map[string]any) store.DiscordUser {
 	userID := utils.ExtractStringField(user, "id")
-	utils.Log.WithField("user_id", userID).Debug("Building Discord user from raw JSON")
+	logging.Log.WithField("user_id", userID).Debug("Building Discord user from raw JSON")
 
 	du := store.DiscordUser{
 		ID:                   userID,
@@ -175,7 +176,7 @@ func discordUserFromRaw(user map[string]any, member map[string]any) store.Discor
 
 	// Member-level overrides
 	if member != nil {
-		utils.Log.WithField("user_id", userID).Debug("Applying member-level overrides")
+		logging.Log.WithField("user_id", userID).Debug("Applying member-level overrides")
 		if v := utils.GetString(member["display_name"]); v != "" {
 			du.DisplayName = v
 		}

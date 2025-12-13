@@ -1,6 +1,9 @@
 package store
 
-import "sync"
+import (
+	"sync"
+	"tether/src/concurrency"
+)
 
 // Timestamps mirrors Lanyard's timestamp shape.
 type Timestamps struct {
@@ -230,6 +233,9 @@ func (s *PresenceStore) broadcast(evt PresenceEvent) {
 	}
 	for _, r := range s.replicators {
 		replicator := r
-		go func() { _ = replicator.Publish(evt) }()
+		// Use the project's safe goroutine helper for consistent logging
+		concurrency.GoSafe(func() {
+			_ = replicator.Publish(evt)
+		})
 	}
 }

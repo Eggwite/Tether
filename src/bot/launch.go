@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"tether/src/lib"
+	"tether/src/logging"
 	"tether/src/middleware"
 	"tether/src/store"
 	"tether/src/utils"
@@ -34,7 +35,7 @@ const rawLogLimit int32 = 3
 // WebSocket server can subscribe to st.Subscribe() to broadcast updates.
 func Launch(token string, st *store.PresenceStore) (*discordgo.Session, error) {
 	if token == "" {
-		utils.Log.Warn("discord bot disabled: DISCORD_TOKEN not set")
+		logging.Log.Warn("discord bot disabled: DISCORD_TOKEN not set")
 		return nil, nil
 	}
 	startTime := time.Now()
@@ -44,7 +45,7 @@ func Launch(token string, st *store.PresenceStore) (*discordgo.Session, error) {
 
 	sess, err := discordgo.New("Bot " + token)
 	if err != nil {
-		utils.Log.WithError(err).Error("failed to create discord session")
+		logging.Log.WithError(err).Error("failed to create discord session")
 		return nil, err
 	}
 
@@ -74,19 +75,19 @@ func Launch(token string, st *store.PresenceStore) (*discordgo.Session, error) {
 	})
 
 	sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		utils.Log.WithFields(logrus.Fields{
+		logging.Log.WithFields(logrus.Fields{
 			"bot":    r.User.Username,
 			"guilds": len(r.Guilds),
 		}).Info("bot ready")
 		if guildID != "" {
 			if err := s.RequestGuildMembers(guildID, "", 0, "", true); err != nil {
-				utils.Log.WithError(err).WithField("guild_id", guildID).Error("guild member request failed")
+				logging.Log.WithError(err).WithField("guild_id", guildID).Error("guild member request failed")
 			} else {
-				utils.Log.WithField("guild_id", guildID).Info("requested guild members")
+				logging.Log.WithField("guild_id", guildID).Info("requested guild members")
 			}
 		}
 		if err := registerCommands(s, guildID); err != nil {
-			utils.Log.WithError(err).Warn("failed to register commands")
+			logging.Log.WithError(err).Warn("failed to register commands")
 		}
 		updateBotStatus(s, st)
 		recordLatencySample(s)
@@ -95,11 +96,11 @@ func Launch(token string, st *store.PresenceStore) (*discordgo.Session, error) {
 	sess.AddHandler(handleInteractions(st, adminIDs, startTime))
 
 	if err := sess.Open(); err != nil {
-		utils.Log.WithError(err).Error("failed to open discord session")
+		logging.Log.WithError(err).Error("failed to open discord session")
 		return nil, err
 	}
 
-	utils.Log.Info("discord bot connected")
+	logging.Log.Info("discord bot connected")
 	stopLoop := startStatusAndLatencyLoop(sess, st)
 	sess.AddHandlerOnce(func(*discordgo.Session, *discordgo.Disconnect) {
 		if stopLoop != nil {
@@ -113,7 +114,7 @@ func Launch(token string, st *store.PresenceStore) (*discordgo.Session, error) {
 func handleRawPresence(st *store.PresenceStore, raw json.RawMessage) {
 	payload, ok := utils.UnmarshalToMap(raw)
 	if !ok {
-		utils.Log.Warn("handleRawPresence: failed to unmarshal payload")
+		logging.Log.Warn("handleRawPresence: failed to unmarshal payload")
 		return
 	}
 
@@ -122,7 +123,7 @@ func handleRawPresence(st *store.PresenceStore, raw json.RawMessage) {
 	if !ok {
 		if userID != "" {
 			st.RemovePresence(userID)
-			utils.Log.WithField("user_id", userID).Info("removed presence (offline or invalid)")
+			logging.Log.WithField("user_id", userID).Info("removed presence (offline or invalid)")
 		}
 		return
 	}
@@ -144,7 +145,7 @@ func handleRawMemberRemove(st *store.PresenceStore, raw json.RawMessage) {
 		return
 	}
 	st.RemovePresence(userID)
-	utils.Log.WithField("user_id", userID).Info("removed presence from member remove")
+	logging.Log.WithField("user_id", userID).Info("removed presence from member remove")
 }
 
 func logGatewayEvent(eventType string, raw json.RawMessage) {
@@ -165,7 +166,7 @@ func logGatewayEvent(eventType string, raw json.RawMessage) {
 		fields["payload"] = string(raw)
 	}
 
-	utils.Log.WithFields(fields).Info("gateway event received")
+	logging.Log.WithFields(fields).Info("gateway event received")
 }
 
 func updateBotStatus(s *discordgo.Session, st *store.PresenceStore) {

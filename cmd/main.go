@@ -10,6 +10,7 @@ import (
 
 	"tether/src/api"
 	"tether/src/bot"
+	"tether/src/logging"
 	"tether/src/middleware"
 	"tether/src/store"
 	"tether/src/utils"
@@ -22,7 +23,7 @@ import (
 func main() {
 	// Load .env file if it exists (non-fatal if missing).
 	_ = godotenv.Load()
-	utils.Configure()
+	logging.Configure()
 
 	port := getenv("PORT", "8080")
 	st := store.NewPresenceStore()
@@ -54,13 +55,13 @@ func main() {
 	// Launch Discord bot
 	discordSession, err := bot.Launch(os.Getenv("DISCORD_TOKEN"), st)
 	if err != nil {
-		utils.Log.WithError(err).Fatal("failed to start Discord bot")
+		logging.Log.WithError(err).Fatal("failed to start Discord bot")
 	}
 
 	go func() {
-		utils.Log.WithField("addr", ":"+port).Info("server listening")
+		logging.Log.WithField("addr", ":"+port).Info("server listening")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			utils.Log.WithError(err).Fatal("http server error")
+			logging.Log.WithError(err).Fatal("http server error")
 		}
 	}()
 
@@ -71,7 +72,7 @@ func waitForShutdown(srv *http.Server, discordSession interface{ Close() error }
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
-	utils.Log.Info("shutting down...")
+	logging.Log.Info("shutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

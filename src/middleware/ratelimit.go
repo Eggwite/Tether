@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"tether/src/concurrency"
+
 	"golang.org/x/time/rate"
 )
 
@@ -25,8 +27,8 @@ func RateLimitMiddleware(requestsPerSecond int, behindProxy bool) func(http.Hand
 		clients = make(map[string]*client)
 	)
 
-	// Cleanup routine for stale clients
-	go func() {
+	// Cleanup routine for stale clients (run in a safe goroutine)
+	concurrency.GoSafe(func() {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
@@ -38,7 +40,7 @@ func RateLimitMiddleware(requestsPerSecond int, behindProxy bool) func(http.Hand
 			}
 			mu.Unlock()
 		}
-	}()
+	})
 
 	burst := requestsPerSecond // allow short bursts up to the per-second rate
 

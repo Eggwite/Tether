@@ -40,7 +40,7 @@ func TestRateLimitMiddleware(t *testing.T) {
 		rateLimitedCount := 0
 
 		// Try 100 requests in quick succession
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			req := httptest.NewRequest("GET", "/test", nil)
 			req.RemoteAddr = ip
 			w := httptest.NewRecorder()
@@ -104,7 +104,7 @@ func TestRateLimitMiddleware(t *testing.T) {
 			r.ServeHTTP(w, req)
 		}
 
-		// Wait for rate limit window to reset (adjust based on your config)
+		// Wait for rate limit window to reset (adjust based on config)
 		time.Sleep(2 * time.Second)
 
 		// Should be allowed again

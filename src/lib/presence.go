@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"slices"
 	"strings"
 
 	"tether/src/store"
@@ -34,6 +35,34 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 		ActiveOnDiscordWeb:      utils.ClientStatusActive(clientStatus, "web"),
 		ActiveOnDiscordEmbedded: utils.ClientStatusActive(clientStatus, "embedded"),
 		DiscordStatus:           status,
+	}
+
+	// Derive a higher-level list of active clients and pick a primary client
+	// using a fixed priority: desktop > mobile > web > embedded.
+	var clients []string
+	if presence.ActiveOnDiscordDesktop {
+		clients = append(clients, "desktop")
+	}
+	if presence.ActiveOnDiscordMobile {
+		clients = append(clients, "mobile")
+	}
+	if presence.ActiveOnDiscordWeb {
+		clients = append(clients, "web")
+	}
+	if presence.ActiveOnDiscordEmbedded {
+		clients = append(clients, "embedded")
+	}
+	presence.ActiveClients = clients
+	if len(clients) > 0 {
+		// priority order
+		for _, p := range []string{"desktop", "mobile", "web", "embedded"} {
+			if slices.Contains(clients, p) {
+				presence.PrimaryActiveClient = p
+			}
+			if presence.PrimaryActiveClient != "" {
+				break
+			}
+		}
 	}
 
 	presence = patchActivitiesFromRaw(presence, rawActivities)

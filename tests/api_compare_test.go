@@ -148,6 +148,11 @@ func shouldIgnoreKey(k string) bool {
 		return true
 	case "discord_user":
 		return true
+	case "active_on_discord_mobile", "active_on_discord_desktop", "active_on_discord_web", "active_on_discord_embedded":
+		// Local API now exposes `active_clients`/`primary_active_client` instead
+		// of the per-client booleans; ignore the old boolean keys when
+		// comparing to Lanyard's API.
+		return true
 	default:
 		if strings.HasSuffix(key, "_url") {
 			return true

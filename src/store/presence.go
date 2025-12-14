@@ -46,17 +46,21 @@ type DiscordUser struct {
 
 // PresenceData is the top-level payload compatible with Lanyard's REST/WS shape.
 type PresenceData struct {
-	ActiveOnDiscordMobile   bool              `json:"active_on_discord_mobile"`
-	ActiveOnDiscordDesktop  bool              `json:"active_on_discord_desktop"`
-	ActiveOnDiscordWeb      bool              `json:"active_on_discord_web"`
-	ActiveOnDiscordEmbedded bool              `json:"active_on_discord_embedded"`
-	ListeningToSpotify      bool              `json:"listening_to_spotify"`
-	KV                      map[string]string `json:"kv,omitempty"`
-	Spotify                 *Spotify          `json:"spotify"`
-	DiscordUser             DiscordUser       `json:"discord_user"`
-	DiscordStatus           string            `json:"discord_status"`
-	Activities              []Activity        `json:"activities"`
-	SuggestedUserIfExists   *string           `json:"suggested_user_if_exists,omitempty"`
+	// Internal booleans: kept for construction but omitted from public JSON
+	ActiveOnDiscordMobile   bool `json:"-"`
+	ActiveOnDiscordDesktop  bool `json:"-"`
+	ActiveOnDiscordWeb      bool `json:"-"`
+	ActiveOnDiscordEmbedded bool `json:"-"`
+	// Derived convenience fields summarizing active clients.
+	ActiveClients         []string          `json:"active_clients,omitempty"`
+	PrimaryActiveClient   string            `json:"primary_active_client,omitempty"`
+	ListeningToSpotify    bool              `json:"listening_to_spotify"`
+	KV                    map[string]string `json:"kv,omitempty"`
+	Spotify               *Spotify          `json:"spotify"`
+	DiscordUser           DiscordUser       `json:"discord_user"`
+	DiscordStatus         string            `json:"discord_status"`
+	Activities            []Activity        `json:"activities"`
+	SuggestedUserIfExists *string           `json:"suggested_user_if_exists,omitempty"`
 }
 
 // PrettyPresence binds a user ID to their current Lanyard-compatible snapshot.

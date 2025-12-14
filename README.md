@@ -29,116 +29,40 @@ Retrieves the most recent cached presence data for the specified user. The respo
 
 **API URL:** `https://tether.eggwite.moe/v1/users/{user_id}`
 
-Example response:
+Example success response (200):
 ```json
 {
-    "success": true,
-    "data": {
-        "active_on_discord_mobile": false,
-        "active_on_discord_desktop": true,
-        "active_on_discord_web": false,
-        "active_on_discord_embedded": false,
-        "listening_to_spotify": true,
-        "spotify": {
-            "track_id": "abcdef1234567890abcdef",
-            "timestamps": {
-                "start": 1234567890123,
-                "end": 1234567890123
-            },
-            "song": "Example Song",
-            "artist": "Example Artist",
-            "album_art_url": "https://example.com/album_art.webp",
-            "album": "Example Album"
-        },
-        "discord_user": {
-            "id": "123456789012345678",
-            "username": "exampleuser",
-            "global_name": "Example User",
-            "display_name": "Example User",
-            "avatar": "abcdef1234567890abcdef",
-            "avatar_url": "https://cdn.discordapp.com/avatars/123456789012345678/abcdef1234567890abcdef.webp?size=256",
-            "discriminator": "0000",
-            "avatar_decoration_data": {
-                "asset": "a_abcdef1234567890abcdef",
-                "avatar_decoration_url": "https://cdn.discordapp.com/avatar-decoration-presets/a_abcdef1234567890abcdef.png?size=240&passthrough=true",
-                "expires_at": null,
-                "sku_id": "1234567890123456789"
-            },
-            "primary_guild": {
-                "badge": "abcdef1234567890abcdef",
-                "badge_url": "https://cdn.discordapp.com/clan-badges/123456789012345678/abcdef1234567890abcdef.png?size=32",
-                "identity_enabled": true,
-                "identity_guild_id": "123456789012345678",
-                "tag": "EX"
-            },
-            "collectibles": null,
-            "display_name_styles": null,
-            "bot": false,
-            "public_flags": 64
-        },
-        "discord_status": "online",
-        "activities": [
-            {
-                "created_at": 1234567890123,
-                "emoji": {
-                    "name": "🪚"
-                },
-                "id": "custom",
-                "name": "Custom Status",
-                "session_id": "abcdef1234567890abcdef",
-                "state": "”Example status“",
-                "type": 4
-            },
-            {
-                "assets": {
-                    "large_image": "spotify:abcdef1234567890abcdef",
-                    "large_text": "Example Album"
-                },
-                "created_at": 1234567890123,
-                "details": "Example Song",
-                "flags": 48,
-                "id": "spotify:1",
-                "name": "Spotify",
-                "party": {
-                    "id": "spotify:123456789012345678"
-                },
-                "session_id": "abcdef1234567890abcdef",
-                "state": "Example Artist",
-                "sync_id": "abcdef1234567890abcdef",
-                "timestamps": {
-                    "end": 1234567890123,
-                    "start": 1234567890123
-                },
-                "type": 2
-            },
-            {
-                "application_id": "123456789012345678",
-                "assets": {
-                    "large_image": "1234567890123456789",
-                    "large_image_url": "https://cdn.discordapp.com/app-assets/123456789012345678/1234567890123456789.webp",
-                    "large_text": "Idling",
-                    "small_image": "1234567890123456789",
-                    "small_image_url": "https://cdn.discordapp.com/app-assets/123456789012345678/1234567890123456789.webp",
-                    "small_text": "Visual Studio Code"
-                },
-                "created_at": 1234567890123,
-                "details": "Idling",
-                "id": "abcdef1234567890abcdef",
-                "name": "Visual Studio Code",
-                "platform": "desktop",
-                "session_id": "abcdef1234567890abcdef",
-                "timestamps": {
-                    "start": 1234567890123
-                },
-                "type": 0
-            }
-        ]
-    }
+  "active_clients": ["desktop"],
+  "primary_active_client": "desktop",
+  "listening_to_spotify": true,
+  "spotify": {
+    "track_id": "abcdef1234567890abcdef",
+    "timestamps": { "start": 1234567890123, "end": 1234567890123 },
+    "song": "Example Song",
+    "artist": "Example Artist",
+    "album_art_url": "https://example.com/album_art.webp",
+    "album": "Example Album"
+  },
+  "discord_user": { /* user object (same as before) */ },
+  "discord_status": "online",
+  "activities": [ /* array of activity objects */ ]
+}
+```
+
+Example error response (404 / not found):
+```json
+{
+  "error": {
+    "code": "user_not_monitored",
+    "message": "User is not being monitored by Tether"
+  }
 }
 ```
 
 Notes:
-- `success=false` with `data` absent when the user is not tracked.
+- Success responses return the presence object directly (no `success` envelope).
+- Errors return an object under the `error` key with `code` and `message`.
+- The low-level booleans `active_on_discord_*` are no longer exposed; use `active_clients` (list) and `primary_active_client` (string) instead.
 
 ### GET `/healthz`
 Simple readiness probe. Returns 200 with `{ "status": "ok" }`.

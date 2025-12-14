@@ -17,7 +17,7 @@ type SnapshotHandler struct {
 func (h SnapshotHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userID")
 	if userID == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Response{Success: false, Error: "user id missing"})
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": map[string]any{"code": "bad_request", "message": "user id missing"}})
 		return
 	}
 	presence, ok := h.Store.GetPresence(userID)
@@ -32,8 +32,5 @@ func (h SnapshotHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type HealthHandler struct{}
 
 func (HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	utils.WriteJSON(w, http.StatusOK, utils.Response{
-		Success: true,
-		Data:    map[string]string{"status": "ok"},
-	})
+	utils.WriteJSON(w, http.StatusOK, map[string]any{"status": "ok"})
 }

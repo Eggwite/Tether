@@ -27,6 +27,7 @@ func TestCompareLocalAndLanyardAPI(t *testing.T) {
 	localURL := "http://localhost:8080/v1/users/" + userID
 	lanyardURL := "https://api.lanyard.rest/v1/users/" + userID
 
+	// Fetch local API
 	localResp, err := http.Get(localURL)
 	if err != nil {
 		t.Fatalf("Failed to hit local API: %v", err)
@@ -34,6 +35,7 @@ func TestCompareLocalAndLanyardAPI(t *testing.T) {
 	defer localResp.Body.Close()
 	localBody, _ := io.ReadAll(localResp.Body)
 
+	// Fetch Lanyard API
 	lanyardResp, err := http.Get(lanyardURL)
 	if err != nil {
 		t.Fatalf("Failed to hit Lanyard API: %v", err)
@@ -41,28 +43,41 @@ func TestCompareLocalAndLanyardAPI(t *testing.T) {
 	defer lanyardResp.Body.Close()
 	lanyardBody, _ := io.ReadAll(lanyardResp.Body)
 
-	var localData UserResponse
-	var lanyardData Response
-
-	if err := json.Unmarshal(localBody, &localData); err != nil {
+	// Decode into generic maps to accept either the old envelope ({"success":..,"data":..})
+	// or the new direct-object success shape. If envelope present, extract .data.
+	var localRoot any
+	var lanyardRoot any
+	if err := json.Unmarshal(localBody, &localRoot); err != nil {
 		t.Fatalf("Failed to parse local API response: %v", err)
 	}
-	if err := json.Unmarshal(lanyardBody, &lanyardData); err != nil {
+	if err := json.Unmarshal(lanyardBody, &lanyardRoot); err != nil {
 		t.Fatalf("Failed to parse Lanyard API response: %v", err)
 	}
 
-	if !localData.Success || !lanyardData.Success {
-		t.Fatalf("One or both APIs did not return success")
+	getData := func(root any) (map[string]any, bool) {
+		// If envelope shape
+		if m, ok := root.(map[string]any); ok {
+			if success, exists := m["success"]; exists {
+				if b, ok := success.(bool); ok && !b {
+					return nil, false
+				}
+				if d, ok := m["data"].(map[string]any); ok {
+					return d, true
+				}
+			}
+			// Otherwise assume root itself is the data object
+			return m, true
+		}
+		return nil, false
 	}
 
-	// Assert Data to map[string]any for ranging
-	lanyardMap, ok := lanyardData.Data.(map[string]any)
+	lanyardMap, ok := getData(lanyardRoot)
 	if !ok {
-		t.Fatalf("Lanyard Data is not a map")
+		t.Fatalf("Lanyard Data is not usable")
 	}
-	localMap, ok := localData.Data.(map[string]any)
+	localMap, ok := getData(localRoot)
 	if !ok {
-		t.Fatalf("Local Data is not a map")
+		t.Fatalf("Local Data is not usable")
 	}
 
 	// Compare fields, ignoring rapidly changing ones and unsupported ones

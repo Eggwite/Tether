@@ -29,16 +29,35 @@ func TestSnapshotHandler(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 
-	var resp struct {
-		Success bool               `json:"success"`
-		Data    store.PresenceData `json:"data"`
-	}
-	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+	// Accept either the old envelope {success,data} or the new direct presence object.
+	var root any
+	if err := json.NewDecoder(rec.Body).Decode(&root); err != nil {
 		t.Fatalf("decode failed: %v", err)
 	}
-
-	if !resp.Success || resp.Data.DiscordStatus != "online" {
-		t.Fatalf("unexpected payload: %+v", resp)
+	var dataMap map[string]any
+	if m, ok := root.(map[string]any); ok {
+		if s, exists := m["success"]; exists {
+			if sb, ok := s.(bool); ok && !sb {
+				t.Fatalf("unexpected non-success payload: %+v", m)
+			}
+			if d, ok := m["data"].(map[string]any); ok {
+				dataMap = d
+			}
+		} else {
+			dataMap = m
+		}
+	}
+	if dataMap == nil {
+		t.Fatalf("unexpected payload: %+v", root)
+	}
+	// Map into PresenceData to assert fields
+	var pres store.PresenceData
+	b, _ := json.Marshal(dataMap)
+	if err := json.Unmarshal(b, &pres); err != nil {
+		t.Fatalf("unmarshal presence failed: %v", err)
+	}
+	if pres.DiscordStatus != "online" {
+		t.Fatalf("unexpected payload: %+v", pres)
 	}
 }
 

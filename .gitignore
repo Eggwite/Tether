@@ -14,5 +14,8 @@ air.log
 .envrc
 .venv/
 
+#npm package files
+node_modules/
+
 # Custom
 temp*

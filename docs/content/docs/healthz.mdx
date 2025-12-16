@@ -1,30 +1,16 @@
 ---
 title: GET /healthz
-description: Readiness probe for the HTTP server.
+description: This path provides a simple readiness probe to verify that the server is operational.
 ---
-
-## Overview
-
-Simple readiness endpoint used by health checks.
-
-## Request
-
-- Method: `GET`
-- Path: `/healthz`
-
-Example:
+---
+### Request:
 
 ```http
-GET /healthz HTTP/1.1
-Host: localhost:8080
+GET /healthz
 ```
+### Response:
 
-## Responses
-
-- `200 OK` — returns `{ "status": "ok" }` when the server is running.
-
-Example body:
-
+HTTP status: `200 OK`
 ```json
 { "status": "ok" }
 ```

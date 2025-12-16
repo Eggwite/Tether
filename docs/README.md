@@ -1,9 +1,9 @@
-# tether
+# Tether
 
 This is a Next.js application generated with
 [Create Fumadocs](https://github.com/fuma-nama/fumadocs).
 
-Run development server:
+Run development server: (navigate to the ./docs dir using `cd docs` first)
 
 ```bash
 npm run dev

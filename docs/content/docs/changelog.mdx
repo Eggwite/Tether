@@ -1,0 +1,54 @@
+---
+title: Changelog
+---
+
+## [Unreleased]
+
+<Callout title="Unreleased" type="idea">
+Upcoming improvements, bug fixes and small UX polish for the next patch.
+
+This page lists noteworthy changes so you can track upgrades at a glance.
+</Callout>
+
+--- 
+
+## [`1.0.0`] - 17 Dec 2025
+
+<Callout title="Initial Release" type="tip">
+Tether v1 is the first public release: a small Go service with minimal runtime requirements that exposes Discord presence over a REST+WebSocket API. It requires no external services by default (for example, Redis is optional).
+</Callout>
+
+### Highlights
+
+- Fast, in-memory presence store for low-latency reads
+- Lanyard-compatible REST shape with enriched fields (avatars, Spotify metadata)
+- WebSocket gateway with lightweight opcode protocol for live updates
+- Small footprint and easy deploy — runs without Redis by default
+
+### Added
+- Documented necessary API endpoints and WebSocket gateway protocol
+- `GET /v1/users/{userID}` — Fetch presence snapshot for a user (Lanyard-compatible)
+- `GET /healthz` — Readiness probe
+- WebSocket gateway at `/socket` — subscribe to live presence updates via opcodes
+- Basic runtime metrics accessible via admin commands
+
+### Notes & Upgrade
+
+If you depend on the REST shape, note that error responses now follow a canonical envelope with `success: false` and a full `error` object containing `code`, `message`, `status`, `retryable` and optional `details`.
+
+Example:
+
+```json
+{
+    "success": false,
+    "error": {
+        "code": "USER_NOT_FOUND",
+        "message": "User is not being monitored by Tether",
+        "status": 404,
+        "retryable": false,
+        "details": null
+    }
+}
+```
+
+If you upgrade from an earlier internal build, verify clients that rely on raw presence shapes. The public interface is stable but I tightened some validation and error formats.

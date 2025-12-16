@@ -1,0 +1,54 @@
+---
+title: Rate Limits
+---
+
+Details on rate limiting policies for HTTP endpoints and the WebSocket gateway.
+
+---
+
+## HTTP Rate Limits
+
+<Callout title="Info" type="info">
+All HTTP endpoints are rate limited per IP address to ensure fair usage and prevent abuse.
+</Callout>
+
+| Limit Type            | Value                                     |
+|-----------------------|-------------------------------------------|
+| Requests per second   | `10`                                        |
+| Burst capacity         | `10`                                        |
+| Exceeding behavior     | HTTP `429` (Too Many Requests)             |
+
+### Rate Limit Headers
+
+When rate limited, the response includes these headers:
+
+| Header                 | Description                                 |
+|------------------------|---------------------------------------------|
+| `Retry-After`            | Seconds to wait before retrying              |
+| `X-RateLimit-Limit`      | Maximum requests per second                  |
+| `X-RateLimit-Remaining`  | Remaining requests (0 when limited)          |
+| `X-RateLimit-Reset`      | Unix timestamp when limit resets             |
+
+<Callout title="Example: Rate Limited Response" type="idea">
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 1
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1703123456
+
+Too Many Requests
+```
+</Callout>
+
+## WebSocket Gateway
+
+<Callout title="Note" type="info">
+The WebSocket gateway does not have explicit rate limits, but requires proper heartbeat timing. Connections that miss heartbeats will be closed.
+</Callout>
+
+## Implementation Details
+
+- Rate limiting uses a token bucket algorithm.
+- Per-IP limiters are cleaned up after 3 minutes of inactivity.

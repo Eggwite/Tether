@@ -14,6 +14,28 @@ func WriteJSON(w http.ResponseWriter, status int, payload any) {
 	_ = enc.Encode(payload)
 }
 
+// ErrorResponse creates a standardized error response object.
+func ErrorResponse(code string, message string, status int, retryable bool, details any) map[string]any {
+	return map[string]any{
+		"success": false,
+		"error": map[string]any{
+			"code":      code,
+			"message":   message,
+			"status":    status,
+			"retryable": retryable,
+			"details":   details,
+		},
+	}
+}
+
+// SuccessResponse creates a standardized success response object.
+func SuccessResponse(data any) map[string]any {
+	return map[string]any{
+		"success": true,
+		"data":    data,
+	}
+}
+
 // Below are utility functions for handling JSON data
 
 // GetString safely extracts a string from any value.

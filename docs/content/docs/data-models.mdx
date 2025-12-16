@@ -1,0 +1,206 @@
+---
+title: Data Models
+---
+
+## Core Data Structures
+
+This page defines the stable JSON data models returned by the API. Language-specific examples, such as Go structs, are illustrative and non-authoritative.
+
+### PresenceData
+
+Represents the current presence state of a Discord user.
+
+#### Fields
+
+| Field                  | Type                  | Description                                                                                     |
+|------------------------|-----------------------|-------------------------------------------------------------------------------------------------|
+| `active_clients`       | array of string      | A list of platforms the user is currently active on. **Allowed values**: `desktop`, `mobile`, `web`, `embedded`. Order is not meaningful. The list may be empty or omitted if no clients are active. |
+| `primary_active_client`| string, optional      | The platform considered primary when multiple clients are active. Guaranteed to be one of `active_clients` when present. |
+| `listening_to_spotify` | boolean               | Indicates whether the user is actively listening to Spotify.                                   |
+| `spotify`              | object or null        | Present only when `listening_to_spotify` is true. If `listening_to_spotify` is false, `spotify` will be null. |
+| `discord_user`         | object               | Basic Discord user identity information.                                                      |
+| `discord_status`       | string               | **Allowed values**: `online`, `idle`, `dnd`, `offline`.                                        |
+| `activities`           | array of object      | A list of active Discord activities.  |
+
+<Callout title="Note" type="warn">
+  The `Activity` object is a partially structured payload derived from Discord’s gateway. Fields may be added over time without a breaking version bump or due to changes in Discord's API. Clients should ignore unknown fields.
+</Callout>
+<Tabs items={["JSON", "Go"]}>
+  <Tab>
+
+```json
+{
+  "active_clients": ["desktop", "mobile"],
+  "primary_active_client": "desktop",
+  "listening_to_spotify": true,
+  "spotify": {
+    "track_id": "example_track_id",
+    "timestamps": {
+      "start": 1672531200000,
+      "end": 1672534800000
+    },
+    "song": "Example Song",
+    "artist": "Example Artist",
+    "album_art_url": "https://example.com/album_art.jpg",
+    "album": "Example Album"
+  },
+  "discord_user": {
+    "id": "example_user_id",
+    "username": "example_user",
+    "global_name": "Example User",
+    "display_name": "Example",
+    "avatar": "example_avatar_hash",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "discriminator": "1234",
+    "bot": false,
+    "public_flags": 64
+  },
+  "discord_status": "online",
+  "activities": [
+    {
+      "type": 4,
+      "name": "Custom Status",
+      "state": "Example custom status",
+      "emoji": {
+        "name": "😊"
+      }
+    },
+    {
+      "type": 2,
+      "name": "Spotify",
+      "details": "Example Song",
+      "state": "Example Artist",
+      "timestamps": {
+        "start": 1672531200000,
+        "end": 1672534800000
+      },
+      "assets": {
+        "large_image": "spotify:example_large_image",
+        "large_text": "Example Album"
+      }
+    }
+  ]
+}
+```
+
+  </Tab>
+  <Tab>
+
+```go
+type PresenceData struct {
+    ActiveClients         []string          `json:"active_clients,omitempty"`
+    PrimaryActiveClient   string            `json:"primary_active_client,omitempty"`
+    ListeningToSpotify    bool              `json:"listening_to_spotify"`
+    Spotify               *Spotify          `json:"spotify"`
+    DiscordUser           DiscordUser       `json:"discord_user"`
+    DiscordStatus         string            `json:"discord_status"`
+    Activities            []Activity        `json:"activities"`
+}
+```
+
+  </Tab>
+</Tabs>
+
+### DiscordUser
+
+Represents basic Discord user identity information.
+
+#### Fields
+
+| Field          | Type              | Description                                                                 |
+|----------------|-------------------|-----------------------------------------------------------------------------|
+| `id`           | string, optional  | The unique identifier for the user.                                        |
+| `username`     | string, optional  | The user’s username.                                                       |
+| `global_name`  | string, optional  | The user’s global display name.                                            |
+| `display_name` | string, optional  | The user’s display name.                                                   |
+| `avatar`       | string, optional  | The user’s avatar hash.                                                    |
+| `avatar_url`   | string, optional  | The URL to the user’s avatar image.                                        |
+| `discriminator`| string, optional  | The user’s discriminator (e.g., `1234`).                                   |
+| `bot`          | boolean           | Whether the user is a bot.                                                 |
+| `public_flags` | integer           | Public flags associated with the user.                                     |
+
+<Tabs items={["JSON", "Go"]}>
+  <Tab>
+
+```json
+{
+  "id": "example_user_id",
+  "username": "example_user",
+  "global_name": "Example User",
+  "display_name": "Example",
+  "avatar": "example_avatar_hash",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "discriminator": "1234",
+  "bot": false,
+  "public_flags": 64
+}
+```
+
+  </Tab>
+  <Tab>
+
+```go
+type DiscordUser struct {
+    ID            string `json:"id,omitempty"`
+    Username      string `json:"username,omitempty"`
+    GlobalName    string `json:"global_name,omitempty"`
+    DisplayName   string `json:"display_name,omitempty"`
+    Avatar        string `json:"avatar,omitempty"`
+    AvatarURL     string `json:"avatar_url,omitempty"`
+    Discriminator string `json:"discriminator,omitempty"`
+    Bot           bool   `json:"bot"`
+    PublicFlags   int    `json:"public_flags"`
+}
+```
+
+  </Tab>
+</Tabs>
+
+### Spotify
+
+Represents Spotify listening information.
+
+#### Fields
+
+| Field          | Type              | Description                                                                 |
+|----------------|-------------------|-----------------------------------------------------------------------------|
+| `track_id`     | string, optional  | The unique identifier for the track.                                       |
+| `timestamps`   | object, optional  | The start and end times for the track. **Notes**: Timestamps are in milliseconds since the Unix epoch. |
+| `song`         | string, optional  | The name of the song.                                                      |
+| `artist`       | string, optional  | The name of the artist.                                                    |
+| `album`        | string, optional  | The name of the album.                                                     |
+| `album_art_url`| string, optional  | The URL to the album art image.                                            |
+
+<Tabs items={["JSON", "Go"]}>
+  <Tab>
+
+```json
+{
+  "track_id": "example_track_id",
+  "timestamps": {
+    "start": 1672531200000,
+    "end": 1672534800000
+  },
+  "song": "Example Song",
+  "artist": "Example Artist",
+  "album": "Example Album",
+  "album_art_url": "https://example.com/album_art.jpg"
+}
+```
+
+  </Tab>
+  <Tab>
+
+```go
+type Spotify struct {
+    TrackID    string     `json:"track_id,omitempty"`
+    Timestamps Timestamps `json:"timestamps,omitempty"`
+    Song       string     `json:"song,omitempty"`
+    Artist     string     `json:"artist,omitempty"`
+    AlbumArt   string     `json:"album_art_url,omitempty"`
+    Album      string     `json:"album,omitempty"`
+}
+```
+
+  </Tab>
+</Tabs>

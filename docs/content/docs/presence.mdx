@@ -1,0 +1,172 @@
+---
+title: Presence Object 
+---
+
+High-level overview of the presence data model used in Tether API responses and WebSocket events.
+
+---
+
+## Requesting Presence Data
+
+<Callout>
+The presence data model is consistent across both WebSocket gateway events and HTTP API responses.
+</Callout>
+
+#### HTTP API
+
+Typically when calling the HTTP API to fetch presence data for users, the response will include presence objects.
+
+```bash
+GET https://tether.eggwite.moe/v1/presence/{userID}
+```
+
+```json
+{
+  success: true,
+  data: {
+    // PresenceData
+    ...
+  }
+}
+```
+
+#### WebSocket Gateway
+
+```bash
+WS ws://tether.eggwite.moe/socket
+
+{
+  "op": 2,
+  "d": {
+    "subscribe_to_ids": ["example_user_id_1", "example_user_id_2"]
+  }
+}
+```
+ <Card href="./ws-gateway" title="WebSocket Gateway" >
+    Check the WebSocket Gateway documentation for details on subscribing to user IDs and receiving presence updates.
+  </Card>
+---
+When subscribed to user IDs via the WebSocket gateway, presence updates will include presence objects in the `d` field of `PRESENCE_UPDATE` events.
+
+```json title="PRESENCE_UPDATE"
+{
+  "op": 0,
+  "seq": 123,
+  "t": "PRESENCE_UPDATE",
+  "d": {
+    // PresenceData
+    ...
+  }
+}
+```
+
+### Diagram
+
+The diagram represents the relational structure of the typical response presence object returned by the Tether API. More details on the specific fields and properties can be found at [Presence Data Model](./data-models#presence-data-model).
+
+<Tabs items={["Diagram", "Example"]}>
+  <Tab>
+    <Mermaid chart={`
+      classDiagram
+        class Presence {
+          discord_user: DiscordUser
+          discord_status: string
+          activities: Activity[]
+          listening_to_spotify: bool
+          spotify: Spotify
+          active_clients: string[]
+          primary_active_client: string
+        }
+        class DiscordUser {
+          id: string
+          username: string
+          global_name: string
+          display_name: string
+          avatar_url: string
+          discriminator: string
+          bot: bool
+          public_flags: int
+        }
+        class Spotify {
+          track_id: string
+          song: string
+          artist: string
+          album: string
+          album_art_url: string
+          timestamps: Timestamps
+        }
+        class Timestamps {
+          start: int64
+          end: int64
+        }
+        Presence o-- DiscordUser
+        Presence o-- Spotify
+        Spotify o-- Timestamps
+    `} style="overflow: visible;" />
+  </Tab>
+  <Tab>
+  ```json title="response.json"
+  {
+    "active_clients": ["desktop", "mobile"],
+    "primary_active_client": "desktop",
+    "listening_to_spotify": true,
+    "spotify": {
+      "track_id": "example_track_id",
+      "timestamps": {
+        "start": 1672531200000,
+        "end": 1672534800000
+      },
+      "song": "Example Song",
+      "artist": "Example Artist",
+      "album_art_url": "https://example.com/album_art.jpg",
+      "album": "Example Album"
+    },
+    "discord_user": {
+      "id": "example_user_id",
+      "username": "example_user",
+      "global_name": "Example User",
+      "display_name": "Example",
+      "avatar": "example_avatar_hash",
+      "avatar_url": "https://example.com/avatar.jpg",
+      "discriminator": "1234",
+      "bot": false,
+      "public_flags": 64
+    },
+    "discord_status": "online",
+    "activities": [
+      {
+        "type": 4,
+        "name": "Custom Status",
+        "state": "Example custom status",
+        "emoji": {
+          "name": "😊"
+        }
+      },
+      {
+        "type": 2,
+        "name": "Spotify",
+        "details": "Example Song",
+        "state": "Example Artist",
+        "timestamps": {
+          "start": 1672531200000,
+          "end": 1672534800000
+        },
+        "assets": {
+          "large_image": "spotify:example_large_image",
+          "large_text": "Example Album"
+        }
+      }
+    ]
+  }
+  ```
+  </Tab>
+</Tabs>
+
+<Callout title="Notes on Presence Data" type="idea">
+| Field/Property | Description |
+|----------------|-------------|
+| Presence Object | The presence object represents the most recently observed state for a user, as reported by Discord. It may not always reflect the user’s exact real-time presence due to possible delays or missed updates from the Discord gateway |
+| primary_active_client | The `primary_active_client` will always be one of the active clients, if present. |
+| listening_to_spotify | `listening_to_spotify` is true if the user is detected as listening to Spotify, exists even if the full `spotify` object is not present. |
+| activities | The `activities` array may contain custom or third-party activities; its structure may change over time. |
+</Callout>

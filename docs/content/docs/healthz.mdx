@@ -1,0 +1,30 @@
+---
+title: GET /healthz
+description: Readiness probe for the HTTP server.
+---
+
+## Overview
+
+Simple readiness endpoint used by health checks.
+
+## Request
+
+- Method: `GET`
+- Path: `/healthz`
+
+Example:
+
+```http
+GET /healthz HTTP/1.1
+Host: localhost:8080
+```
+
+## Responses
+
+- `200 OK` — returns `{ "status": "ok" }` when the server is running.
+
+Example body:
+
+```json
+{ "status": "ok" }
+```

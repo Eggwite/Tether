@@ -1,0 +1,90 @@
+---
+title: API Versioning
+---
+
+
+<Callout title="Warning: Unstable API" type="error">
+This project is under **active development**. Even within `v1`, breaking changes may occur at any time until a stable release is announced. This notice will be removed once the API is considered stable. You should be able to trust most fields to remain stable, but be prepared for possible changes.
+</Callout>
+
+---
+
+## Versioning Scheme
+
+
+The API uses URL-based versioning with the `v1` prefix. All endpoints are prefixed with `/v1/`.
+
+```http
+GET /v1/users/{userID}
+```
+
+
+---
+
+### Version History
+
+| Version | Status  | Highlights                                 |
+|---------|---------|--------------------------------------------|
+| v1      | Current | REST API, WebSocket gateway, Lanyard shape |
+
+
+```http
+GET /v1/users/{userID}
+```
+
+
+---
+
+
+<Callout title="Stability" type="tip">
+Within a major version (e.g. `v1`), breaking changes are not made. New fields may be added, but existing fields and error shapes remain stable.
+</Callout>
+
+---
+
+
+## Versioning & Compatibility
+
+- Major version in URL (e.g. `/v1/`).
+- Minor/patch releases are non-breaking.
+- Breaking changes only in new major versions (v2, v3, ...).
+- Deprecated endpoints: marked in docs, supported for at least 6 months.
+
+---
+
+
+## Upgrading
+
+When upgrading to a new major version:
+
+- Review the changelog and release notes.
+- Update clients to ignore unknown fields.
+- Ensure error handling supports the canonical envelope.
+
+---
+
+
+## Guarantees
+
+- New fields may be added at any time.
+- Fields are only removed/renamed in major versions.
+- Error format: see [Error Codes](./errors).
+
+---
+
+
+## Release Cadence
+
+No strict schedule. Patch/minor updates as needed; major versions only for breaking changes.
+
+---
+
+
+## Need help?
+
+Open an issue or join the Discord (see README) for migration help.
+
+See also: [Changelog](./changelog), [Error Codes](./errors), [Reference](./reference)
+
+---
+

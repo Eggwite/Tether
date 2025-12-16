@@ -6,7 +6,7 @@ cmd = "go build -o ./tmp/bin/server.exe ./cmd"
 entrypoint = "./tmp/bin/server.exe"
 delay = 1000
 include_ext = ["go"]
-exclude_dir = ["tmp", "vendor"]
+exclude_dir = ["tmp", "vendor", "docs", "temp"]
 
 [log]
 time = true

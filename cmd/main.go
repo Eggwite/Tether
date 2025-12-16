@@ -37,6 +37,9 @@ func main() {
 
 	// Routes
 	r.Get("/v1/users/{userID}", api.SnapshotHandler{Store: st}.ServeHTTP)
+	// Handle requests with no user ID (e.g. GET /v1/users or /v1/users/)
+	r.Get("/v1/users", api.MissingUserHandler{}.ServeHTTP)
+	r.Get("/v1/users/", api.MissingUserHandler{}.ServeHTTP)
 	r.Get("/healthz", api.HealthHandler{}.ServeHTTP)
 	r.Handle("/socket", wsServer)
 	// Custom 404 handler for API routes

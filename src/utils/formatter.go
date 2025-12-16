@@ -9,20 +9,22 @@ func Success(p store.PresenceData) any {
 
 // UserNotFound returns the error shape {"error": {"code","message"}}.
 func UserNotFound() any {
-	return map[string]any{
-		"error": map[string]any{
-			"code":    "user_not_monitored",
-			"message": "User is not being monitored by Tether",
-		},
-	}
+	return ErrorResponse(
+		"USER_NOT_FOUND",
+		"User is not being monitored by Tether",
+		404,
+		false,
+		nil,
+	)
 }
 
 // PageNotFound returns the error shape for unknown routes.
 func PageNotFound() any {
-	return map[string]any{
-		"error": map[string]any{
-			"code":    "page_not_found",
-			"message": "Route does not exist",
-		},
-	}
+	return ErrorResponse(
+		"PAGE_NOT_FOUND",
+		"Route does not exist",
+		404,
+		false,
+		nil,
+	)
 }

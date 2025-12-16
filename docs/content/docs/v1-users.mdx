@@ -1,0 +1,73 @@
+---
+title: GET /v1/users/{userID}
+description: Retrieve a presence snapshot for a single user.
+---
+
+## Overview
+
+Returns the latest presence snapshot for a given Discord user ID. This endpoint mirrors the behaviour of the local `SnapshotHandler` used in the server.
+
+<Callout title="Info" type="info">
+The presence data model returned by this endpoint is consistent with WebSocket events. See [Data Models](./data-models) for the full schema and field documentation.
+</Callout>
+
+## Request
+
+| Method | Path                  | Description                  |
+|--------|-----------------------|------------------------------|
+| GET    | `/v1/users/{userID}`    | Get presence for a user      |
+
+| Parameter | Type   | Description                |
+|-----------|--------|----------------------------|
+| userID    | string | Discord user ID to fetch   |
+
+**Example:**
+
+```http
+GET https://tether.eggwite.moe/v1/users/{userID}
+```
+
+## Responses
+
+| Status | Description                        |
+|--------|------------------------------------|
+| `200`    | Success; returns presence payload  |
+| `400`    | Missing or invalid `userID`        |
+| `404`    | User not found in presence store   |
+
+### Example Success Response
+
+```json title="200 OK"
+{
+  "success": true,
+  "data": {
+    "user_id": "1447110828783566973",
+    "data": { /* see Data Models for schema */ }
+  }
+}
+```
+
+<Callout title="Note" type="info">
+The `data` field contains a presence object. For a detailed breakdown of all fields, see [Presence Data Model](./data-models#presence-data-model).
+</Callout>
+
+### Example Error Response
+
+```json title="404 Not Found"
+{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User is not being monitored by Tether",
+    "status": 404,
+    "retryable": false,
+    "details": null
+  }
+}
+```
+
+<Callout title="Tip" type="idea">
+- The server returns `400` if `userID` is empty or invalid.
+- A `404` is returned if the user is not tracked by the presence store.
+- For rate limits and error envelope details, see [Rate Limits](./rate-limits) and [Error Codes](./errors).
+</Callout>

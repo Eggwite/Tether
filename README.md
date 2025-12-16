@@ -17,7 +17,7 @@ fetch("https://tether.eggwite.moe/v1/users/123456789012345678")
 - Tracks Discord gateway presences (with privileged intents enabled) and caches them in-memory.
 - Serves a Lanyard-compatible REST shape with enriched fields (avatar_url, display/global names, primary_guild passthrough when present).
 - Streams presence updates over WebSocket with simple opcodes (INIT_STATE, PRESENCE_UPDATE, heartbeats).
-- Zero external deps by default (no Redis); optional admin slash commands for status/latency.
+- No external services required by default (e.g., Redis optional). The project does use external Go module dependencies listed in `go.mod` (Discord, Chi router, Gorilla WebSocket, Logrus, etc.). Optional admin slash commands provide status/latency information when a bot token is configured.
 
 ---
 
@@ -52,10 +52,14 @@ Example success response (200):
 Example error response (404 / not found):
 ```json
 {
-  "error": {
-    "code": "user_not_monitored",
-    "message": "User is not being monitored by Tether"
-  }
+    "success": false,
+    "error": {
+        "code": "USER_NOT_FOUND",
+        "message": "User is not being monitored by Tether",
+        "status": 404,
+        "retryable": false,
+        "details": null
+    }
 }
 ```
 

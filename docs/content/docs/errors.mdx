@@ -1,0 +1,74 @@
+---
+title: Error Codes
+---
+
+Details here focus on error codes returned by the HTTP API. For WebSocket gateway errors, see [WebSocket Gateway](./ws-gateway#error-codes).
+
+## Error Response Envelope
+
+The error response envelope has the following guaranteed structure:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "No Discord user exists with the provided ID",
+    "status": 404,
+    "retryable": false,
+    "details": null
+  }
+}
+```
+
+#### Guarantees:
+
+| Field             | Description                                  |
+|-------------------|----------------------------------------------|
+| `success`         | Always `false` for errors.                   |
+| `error.code`      | Stable across versions.                      |
+| `error.message`   | Human-readable and not stable.               |
+| `error.status`    | Mirrors the HTTP status.                     |
+| `error.retryable` | Authoritative.                               |
+| `error.details`   | Optional and schema-dependent.               |
+<Callout title="Tip">
+  All errors are returned as JSON objects with the above structure.
+</Callout>
+
+### Error Code Taxonomy
+
+Errors are grouped by responsibility, not by endpoint.
+
+#### Client Errors (4xx)
+
+Client errors indicate a permanent failure unless the request is changed. These errors are never retryable.
+
+| Code               | HTTP Status | Message                                 | When Triggered           |
+|--------------------|-------------|-----------------------------------------|--------------------------|
+| INVALID_REQUEST    | 400         | The request is invalid                  | Malformed or missing parameters |
+| INVALID_USER_ID    | 400         | The provided user ID is invalid         | Invalid user ID format   |
+| USER_NOT_FOUND     | 404         | User is not being monitored by Tether   | User not found           |
+
+#### Server Errors (5xx)
+
+Server errors indicate a temporary failure. These errors may be retryable.
+
+| Code               | HTTP Status | Message                                 | When Triggered           |
+|--------------------|-------------|-----------------------------------------|--------------------------|
+| INTERNAL_ERROR     | 500         | An unexpected error occurred            | Unhandled server error   |
+| SERVICE_UNAVAILABLE| 503         | The service is temporarily unavailable  | Server overload or maintenance |
+
+### Example Error Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User is not being monitored by Tether",
+    "status": 404,
+    "retryable": false,
+    "details": null
+  }
+}
+```

@@ -52,15 +52,14 @@ type PresenceData struct {
 	ActiveOnDiscordWeb      bool `json:"-"`
 	ActiveOnDiscordEmbedded bool `json:"-"`
 	// Derived convenience fields summarizing active clients.
-	ActiveClients         []string          `json:"active_clients,omitempty"`
-	PrimaryActiveClient   string            `json:"primary_active_client,omitempty"`
-	ListeningToSpotify    bool              `json:"listening_to_spotify"`
-	KV                    map[string]string `json:"kv,omitempty"`
-	Spotify               *Spotify          `json:"spotify"`
-	DiscordUser           DiscordUser       `json:"discord_user"`
-	DiscordStatus         string            `json:"discord_status"`
-	Activities            []Activity        `json:"activities"`
-	SuggestedUserIfExists *string           `json:"suggested_user_if_exists,omitempty"`
+	ActiveClients         []string    `json:"active_clients,omitempty"`
+	PrimaryActiveClient   string      `json:"primary_active_client,omitempty"`
+	ListeningToSpotify    bool        `json:"listening_to_spotify"`
+	Spotify               *Spotify    `json:"spotify"`
+	DiscordUser           DiscordUser `json:"discord_user"`
+	DiscordStatus         string      `json:"discord_status"`
+	Activities            []Activity  `json:"activities"`
+	SuggestedUserIfExists *string     `json:"suggested_user_if_exists,omitempty"`
 }
 
 // PrettyPresence binds a user ID to their current Lanyard-compatible snapshot.

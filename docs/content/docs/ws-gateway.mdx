@@ -1,0 +1,166 @@
+---
+title: WebSocket Gateway
+---
+
+How to connect to and interact with the WebSocket gateway for real-time presence updates.
+
+---
+
+## WebSocket Endpoint
+
+| Method | Path      | Description                      |
+|--------|-----------|----------------------------------|
+| WS     | /socket   | WebSocket gateway for presence   |
+
+### Example: Subscribe and receive updates
+
+```js title="websocket.js"
+// Minimal example: subscribe to presence updates for a user
+const ws = new WebSocket("ws://tether.eggwite.moe/socket");
+
+let heartbeatInterval = null;
+
+ws.onmessage = (evt) => {
+
+  const msg = JSON.parse(evt.data);
+
+  if (msg.op === 1) {
+    
+    // Start heartbeats
+    heartbeatInterval = setInterval(() => ws.send(JSON.stringify({ op: 3 })), msg.d.heartbeat_interval);
+
+    // Subscribe to user
+    ws.send(JSON.stringify({ op: 2, d: { subscribe_to_ids: ["1234567890"] } }));
+
+  } else if (msg.op === 0 && msg.t === "PRESENCE_UPDATE") {
+
+    // Output presence data
+    console.log("presence", msg.d);
+  }
+};
+
+// Clean up on close
+ws.onclose = () => { if (heartbeatInterval) clearInterval(heartbeatInterval); };
+```
+
+<Callout type="idea">
+  You must send heartbeats at the interval specified in the `HELLO` message.
+</Callout>
+
+## Protocol
+
+| Opcode | Name       | Direction         | Description                                 |
+|--------|------------|------------------|---------------------------------------------|
+| `0`      | EVENT      | Server → Client   | Presence/event updates                      |
+| `1`      | HELLO      | Server → Client   | Greeting, includes `heartbeat_interval`     |
+| `2`      | INITIALIZE | Client → Server   | Subscribe to user IDs                       |
+| `3`      | HEARTBEAT  | Both              | Heartbeat ping/ack                          |
+
+Here is the sequence diagram for a typical connection:
+
+<Mermaid chart="
+sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: Connect /socket
+    Server-->>Client: HELLO (op:1, heartbeat_interval)
+    Client->>Server: INITIALIZE (op:2, subscribe_to_ids)
+    Server-->>Client: EVENT (op:0, PRESENCE_UPDATE)
+    loop 
+        Note over Client,Server: Heartbeat loop to keep connection alive
+        Client->>Server: HEARTBEAT (op:3)
+        Server-->>Client: HEARTBEAT (op:3)
+    end
+"/>
+
+## Messages
+
+<Tabs items={["HELLO", "INITIALIZE", "HEARTBEAT", "EVENT"]}>
+<Tab>
+#### HELLO Message
+
+Sent by the server to the client upon connection.
+
+```json
+{
+  "op": 1,
+  "d": {
+    "heartbeat_interval": 30000
+  }
+}
+```
+</Tab><Tab>
+#### INITIALIZE Message
+
+Sent by the client to the server to subscribe to user IDs.
+
+```json
+{
+  "op": 2,
+  "d": {
+    "subscribe_to_ids": ["example_user_id_1", "example_user_id_2"]
+  }
+}
+```
+</Tab>
+
+<Tab>
+#### HEARTBEAT Message
+
+Sent by both the client and server to keep the connection alive.
+
+```json
+{
+  "op": 3
+}
+```
+</Tab>
+
+<Tab>
+
+#### EVENT Message
+
+The WebSocket gateway sends events to subscribed clients when presence data changes, such as whenever the bot receives a presence update from Discord for a subscribed user.
+
+```json title="PRESENCE_UPDATE"
+{
+  "op": 0,
+  "seq": 123,
+  "t": "PRESENCE_UPDATE",
+  "d": {
+    "user_id": "example_user_id",
+    "data": "..."
+  }
+}
+```
+
+<Callout type="tip">
+  The `data` field contains a snapshot of presence object for the user.
+  See [Presence Data Model](./data-models#presence-data-model)
+</Callout>
+
+</Tab>
+
+
+</Tabs>
+
+<Callout title="Note" type="warn">
+  The following limitations apply to clients connecting to the **WebSocket gateway**.
+| Limitation             | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| Frame Size Limit       | The server caps inbound frame size to `1 MiB` |
+| Missed Heartbeats      | The server allows up to `3` missed heartbeats before disconnecting the client. |
+</Callout>
+
+### Error Codes
+
+| Code  | Name                | Description                                                             |
+|-------|---------------------|-------------------------------------------------------------------------|
+| `4004`  | unknown_opcode      | Received an unsupported `op`.                                           |
+| `4005`  | requires_data_object| `INITIALIZE` message did not include a valid payload.                   |
+| `4006`  | invalid_payload     | `INITIALIZE` message provided no IDs or empty subscriptions.            |
+
+
+<Callout>
+  The server does not return error messages in response to invalid messages. Instead, it closes the connection with the appropriate close code.
+</Callout>

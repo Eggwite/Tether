@@ -342,3 +342,11 @@ func (s *Server) Close() {
 func (s *Server) nextSeq() int64 {
 	return atomic.AddInt64(&s.seq, 1)
 }
+
+func (s *Server) sendError(conn *websocket.Conn, code string, message string, status int, retryable bool, details any) {
+	errorMessage := wsMessage{
+		Op: opEvent,
+		D:  utils.ErrorResponse(code, message, status, retryable, details),
+	}
+	_ = s.writeJSON(conn, errorMessage)
+}

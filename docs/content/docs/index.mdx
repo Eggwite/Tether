@@ -1,13 +1,27 @@
 ---
-title: Hello World
-description: Your first document
+title: Overview
 ---
+<Callout title="Warning: Unstable API" type="error">
+This project is under **active development**. Even within `v1`, breaking changes may occur at any time until a stable release is announced. This notice will be removed once the API is considered stable. You should be able to trust most fields to remain stable, but be prepared for possible changes.
+</Callout>
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+Welcome to the API reference. This section documents the server HTTP endpoints, WebSocket gateway, error codes, and data schema.
 
-## What is Next?
+## Quick Links
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
+| Section                | Description                        |
+|------------------------|------------------------------------|
+| [Getting Started](./getting-started) | Quickstart for HTTP & WebSocket clients |
+| [Endpoints](#endpoints) | List of HTTP and WebSocket endpoints |
+| [Presence Schema](./presence) | Data shape for presence objects |
+| [Error Codes](./errors) | Error codes and messages |
+
+## Endpoints
+
+| Method | Path                    | Description                      |
+|--------|-------------------------|----------------------------------|
+| GET    | `/v1/users/{userID}`    | Get presence snapshot for a user |
+| GET    | `/healthz`              | Health/readiness probe           |
+| WS     | `/socket`               | WebSocket gateway for presence   |
+
+See each endpoint page for details, examples, and code.

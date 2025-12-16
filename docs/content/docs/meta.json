@@ -1,0 +1,28 @@
+{
+    "title": "API",
+    "pages": [
+        "--- Introduction ---",
+        "index",
+        "getting-started",
+        "--- API ---",
+        "v1-users",
+        "presence",
+        "healthz",
+        "--- WebSocket ---",
+        "ws-gateway",
+        "--- Reference ---",
+        "data-models",
+        "errors",
+        "rate-limits",
+        "versioning",
+        "--- Meta ---",
+        "changelog",
+        "faq",
+        "contributing",
+        "license",
+        "privacy",
+        "terms",
+        "acknowledgements"
+    ],
+    "defaultOpen": true
+}

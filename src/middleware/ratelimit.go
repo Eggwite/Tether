@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"tether/src/concurrency"
+	"tether/src/utils"
 
 	"golang.org/x/time/rate"
 )
@@ -113,5 +114,12 @@ func writeRateLimited(w http.ResponseWriter, limit int, delay time.Duration) {
 	w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
 	w.Header().Set("X-RateLimit-Remaining", "0")
 	w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(time.Duration(retryAfterSeconds)*time.Second).Unix(), 10))
-	http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+	w.WriteHeader(http.StatusTooManyRequests)
+	utils.WriteJSON(w, http.StatusTooManyRequests, utils.ErrorResponse(
+		"RATE_LIMITED",
+		"Too Many Requests",
+		429,
+		true,
+		nil,
+	))
 }

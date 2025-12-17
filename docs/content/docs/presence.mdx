@@ -2,6 +2,9 @@
 title: Presence Object 
 description: High-level overview of the presence data model used in Tether API responses and WebSocket events.
 ---
+
+import { Unplug } from "lucide-react"
+
 ---
 
 ## Requesting Presence Data
@@ -40,7 +43,7 @@ WS ws://tether.eggwite.moe/socket
   }
 }
 ```
- <Card href="./ws-gateway" title="WebSocket Gateway" >
+ <Card href="./ws-gateway" title="WebSocket Gateway" icon={<Unplug />}>
     Check the WebSocket Gateway documentation for details on subscribing to user IDs and receiving presence updates.
   </Card>
 ---

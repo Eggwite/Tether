@@ -1,0 +1,31 @@
+---
+title: Endpoints
+description: This section documents the HTTP endpoints and WebSocket gateway for the Tether API.
+---
+---
+
+| Method | Path                    | Description                      |
+|--------|-------------------------|----------------------------------|
+| `GET`    | `/v1/users/{userID}`    | Get presence snapshot for a user |
+| `GET`    | `/healthz`              | Health/readiness probe           |
+| `WS`     | `/socket`               | WebSocket gateway for presence   |
+
+import { ContactRound, HeartPulse, Unplug } from "lucide-react";
+
+<Callout type="tip">
+  The WebSocket gateway is the primary method for receiving real-time presence updates. The HTTP endpoints provide snapshot data and health checks.
+</Callout>
+<Cards>
+    <Card href="./endpoints/v1-users" icon={<ContactRound />} title="GET /v1/users/{userID}">
+        Get presence snapshot for a user.
+    </Card>
+
+    <Card href="./endpoints/healthz" icon={<HeartPulse />} title="GET /healthz">
+        Health/readiness probe.
+    </Card>
+
+    <Card href="./endpoints/ws-gateway" icon={<Unplug />} title="WS /socket">
+        WebSocket gateway for presence.
+    </Card>
+</Cards>
+

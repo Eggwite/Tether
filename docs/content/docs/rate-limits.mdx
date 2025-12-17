@@ -31,12 +31,22 @@ When rate limited, the response includes these headers:
 
 ```http
 HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
 Retry-After: 1
 X-RateLimit-Limit: 10
 X-RateLimit-Remaining: 0
 X-RateLimit-Reset: 1703123456
 
-Too Many Requests
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too Many Requests",
+    "status": 429,
+    "retryable": true,
+    "details": null
+  }
+}
 ```
 </Callout>
 

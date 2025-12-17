@@ -1,0 +1,52 @@
+---
+title: Overview
+description: Do you copy? Tether tether, over and out.
+---
+---
+import { Zap, Blocks, Pyramid, Ban, Users, AudioWaveform, Rabbit } from 'lucide-react'
+
+<Card icon={<Rabbit />} title="Skip the fuss?" href="docs/getting-started" >
+    Know what you need? Jump straight to the Getting Started guide.
+</Card>
+
+Tether is a lightweight, low-latency service that streams Discord presence and activity data to your apps.
+It removes the friction of talking directly to Discord's gateway and returns a predictable, minimal data model
+that fits dashboards, community pages, and real-time experiences.
+
+<Callout type="idea">
+Client apps often reimplement the same logic to parse and normalise presence data.
+Tether centralises that work into a single service so *you* can focus on building experiences.
+</Callout>
+
+<Cards>
+	<Card icon={<AudioWaveform />} title="Why Tether?" >
+		Streams real-time presence and normalises Discord's inconsistent payloads so your frontend receives stable, **production-ready** data.
+	</Card>
+
+	<Card icon={<Users />} title="So who's it for?" >
+		**You!** Dashboard creators, community sites, streaming overlays, or for portfolio websites.
+	</Card>
+
+	<Card icon={<Pyramid />} title="Design">
+		Minimal response shape, fewer surprise fields, and clear guarantees - built to behave predictably in production.
+	</Card>
+
+	<Card icon={<Blocks />} title="Integrations">
+		Works with simple HTTP snapshots or a real-time WebSocket stream depending on the needs of your app.
+	</Card>
+</Cards>
+
+---
+
+## Ready to get started?
+
+Tether uses a discord bot to monitor presence. Make sure to join the official Discord server to start observing your presence!
+
+<Callout title="Join the Community" type="info">
+Connect with other users and contributors on Discord: <a href="https://discord.gg/Ff5FfJzq">discord.gg/Ff5FfJzq</a>
+</Callout>
+<Card icon={<Zap />} title="Getting Started" href="docs/getting-started" >
+    Check out the Getting Started guide to set up Tether for you, and start enriching your apps and connecting with your community!
+</Card>
+---
+

@@ -1,9 +1,7 @@
 ---
-title: WebSocket Gateway
+title: WS /socket
+description: How to connect to and interact with the WebSocket gateway for real-time presence updates.
 ---
-
-How to connect to and interact with the WebSocket gateway for real-time presence updates.
-
 ---
 
 ## WebSocket Endpoint
@@ -14,6 +12,8 @@ How to connect to and interact with the WebSocket gateway for real-time presence
 
 ### Example: Subscribe and receive updates
 
+<Tabs items={["JavaScript","Python"]}>
+<Tab>
 ```js title="websocket.js"
 // Minimal example: subscribe to presence updates for a user
 const ws = new WebSocket("ws://tether.eggwite.moe/socket");
@@ -42,6 +42,58 @@ ws.onmessage = (evt) => {
 // Clean up on close
 ws.onclose = () => { if (heartbeatInterval) clearInterval(heartbeatInterval); };
 ```
+</Tab>
+<Tab>
+```python
+pip install websocket-client
+```
+```python
+# Python equivalent using the `websocket-client` library
+import json
+import threading
+import time
+from websocket import WebSocketApp
+
+heartbeat_interval = None
+
+def on_message(ws_app, message):
+    global heartbeat_interval
+    msg = json.loads(message)
+    if msg.get("op") == 1:
+        # Start heartbeats (server provides milliseconds)
+        heartbeat_interval = msg["d"]["heartbeat_interval"] / 1000.0
+
+        def hb():
+            while True:
+                time.sleep(heartbeat_interval)
+                try:
+                    ws_app.send(json.dumps({"op": 3}))
+                except Exception:
+                    break
+
+        threading.Thread(target=hb, daemon=True).start()
+
+        # Subscribe to user
+        ws_app.send(json.dumps({"op": 2, "d": {"subscribe_to_ids": ["1234567890"]}}))
+    elif msg.get("op") == 0 and msg.get("t") == "PRESENCE_UPDATE":
+        # Output presence data
+        print("presence", msg.get("d"))
+
+def on_close(ws_app, close_status_code, close_msg):
+    # Clean up if needed; heartbeat thread will exit when socket closes
+    pass
+
+def on_open(ws_app):
+    pass
+
+ws = WebSocketApp("ws://tether.eggwite.moe/socket",
+                  on_message=on_message,
+                  on_close=on_close,
+                  on_open=on_open)
+ws.run_forever()
+```
+</Tab>
+</Tabs>
 
 <Callout type="idea">
   You must send heartbeats at the interval specified in the `HELLO` message.

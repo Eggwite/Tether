@@ -1,30 +1,35 @@
 ---
-title: Overview
-description: This section documents the server HTTP endpoints, WebSocket gateway, error codes, and data schema.
+title: Quickstart
+description: Start exposing your presence data with Tether in seconds.
 ---
 ---
+import { Zap, Blocks, Pyramid, Ban, Users, AudioWaveform, Rabbit } from 'lucide-react'
 
-<Callout title="Warning: Unstable API" type="error">
-This project is under **active development**. Even within `v1`, breaking changes may occur at any time until a stable release is announced. This notice will be removed once the API is considered stable. You should be able to trust most fields to remain stable, but be prepared for possible changes.
+<Callout>
+I built Tether so you don't have to parse and normalise gateway noise in every app.
+Let the service do the heavy lifting, and ship features faster.
 </Callout>
 
-Welcome to the API reference. This section documents the server HTTP endpoints, WebSocket gateway, error codes, and data schema.
+# Quickstart
+First off, we to observe a user we need their Discord user ID. You can get this by right clicking a user in Discord and selecting "Copy ID".
+![Copy ID](./images/quickstart/copy-user-screenshot.png)
+<Callout title="Having trouble?" type="warn">
+Not seeing "`Copy ID`"? Make sure you have <u>Enabled Developer Mode</u> in Discord's `user settings`.
 
-## Quick Links
+Head to `User Settings > Advanced` and enable `Developer Mode`
 
-| Section                | Description                        |
-|------------------------|------------------------------------|
-| [Getting Started](./getting-started) | Quickstart for HTTP & WebSocket clients |
-| [Endpoints](#endpoints) | List of HTTP and WebSocket endpoints |
-| [Presence Schema](./presence) | Data shape for presence objects |
-| [Error Codes](./errors) | Error codes and messages |
+![Enable Developer Mode](./images/quickstart/developer-mode-screenshot.png)
+</Callout>
 
-## Endpoints
+<Cards>
+  <Card icon={<Zap />} title="Getting Started" href="./getting-started">Step-by-step setup and examples.</Card>
+  <Card icon={<Blocks />} title="Endpoints" href="./endpoints">Snapshot and gateway reference.</Card>
+  <Card icon={<Pyramid />} title="Presence" href="./presence">Data shape and field guarantees.</Card>
+  <Card title="Source" href="https://github.com/Eggwite/tether">Open source repo and contributions.</Card>
+</Cards>
 
-| Method | Path                    | Description                      |
-|--------|-------------------------|----------------------------------|
-| GET    | `/v1/users/{userID}`    | Get presence snapshot for a user |
-| GET    | `/healthz`              | Health/readiness probe           |
-| WS     | `/socket`               | WebSocket gateway for presence   |
+<Callout title="Join the Community" type="info">
+Ask questions and share ideas in Discord: <a href="https://discord.gg/Ff5FfJzq">discord.gg/Ff5FfJzq</a>
+</Callout>
 
-See each endpoint page for details, examples, and code.
+

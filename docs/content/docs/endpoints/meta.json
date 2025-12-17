@@ -1,0 +1,9 @@
+{
+    "title": "Endpoints",
+    "pages": [
+        "v1-users",
+        "healthz",
+        "ws-gateway"
+    ],
+    "defaultOpen": true
+}

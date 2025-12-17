@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
 import type {
   AccordionMultipleProps,
   AccordionSingleProps,
-} from '@radix-ui/react-accordion';
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { Check, ChevronRight, Link as LinkIcon } from 'lucide-react';
+} from "@radix-ui/react-accordion";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { Check, ChevronRight, Link as LinkIcon } from "lucide-react";
 import {
   type ComponentPropsWithoutRef,
   forwardRef,
@@ -13,21 +13,21 @@ import {
   useEffect,
   useRef,
   useState,
-} from 'react';
-import { cn } from '../lib/cn';
-import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
-import { buttonVariants } from './ui/button';
-import { mergeRefs } from '../lib/merge-refs';
+} from "react";
+import { cn } from "../lib/cn";
+import { useCopyButton } from "fumadocs-ui/utils/use-copy-button";
+import { buttonVariants } from "./ui/button";
+import { mergeRefs } from "../lib/merge-refs";
 
 export const Accordions = forwardRef<
   HTMLDivElement,
-  | Omit<AccordionSingleProps, 'value' | 'onValueChange'>
-  | Omit<AccordionMultipleProps, 'value' | 'onValueChange'>
->(({ type = 'single', className, defaultValue, ...props }, ref) => {
+  | Omit<AccordionSingleProps, "value" | "onValueChange">
+  | Omit<AccordionMultipleProps, "value" | "onValueChange">
+>(({ type = "single", className, defaultValue, ...props }, ref) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const composedRef = mergeRefs(ref, rootRef);
   const [value, setValue] = useState<string | string[]>(() =>
-    type === 'single' ? (defaultValue ?? '') : (defaultValue ?? []),
+    type === "single" ? defaultValue ?? "" : defaultValue ?? []
   );
 
   useEffect(() => {
@@ -37,10 +37,10 @@ export const Accordions = forwardRef<
 
     const selected = document.getElementById(id);
     if (!selected || !element.contains(selected)) return;
-    const value = selected.getAttribute('data-accordion-value');
+    const value = selected.getAttribute("data-accordion-value");
 
     if (value)
-      setValue((prev) => (typeof prev === 'string' ? value : [value, ...prev]));
+      setValue((prev) => (typeof prev === "string" ? value : [value, ...prev]));
   }, []);
 
   return (
@@ -50,23 +50,23 @@ export const Accordions = forwardRef<
       ref={composedRef}
       value={value}
       onValueChange={setValue}
-      collapsible={type === 'single' ? true : undefined}
+      collapsible={type === "single" ? true : undefined}
       className={cn(
-        'divide-y divide-fd-border overflow-hidden rounded-lg border bg-fd-card',
-        className,
+        "divide-y divide-fd-border overflow-hidden rounded-lg border bg-fd-card",
+        className
       )}
       {...props}
     />
   );
 });
 
-Accordions.displayName = 'Accordions';
+Accordions.displayName = "Accordions";
 
 export const Accordion = forwardRef<
   HTMLDivElement,
   Omit<
     ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>,
-    'value' | 'title'
+    "value" | "title"
   > & {
     title: string | ReactNode;
     value?: string;
@@ -74,13 +74,13 @@ export const Accordion = forwardRef<
 >(
   (
     { title, className, id, value = String(title), children, ...props },
-    ref,
+    ref
   ) => {
     return (
       <AccordionPrimitive.Item
         ref={ref}
         value={value}
-        className={cn('scroll-m-24', className)}
+        className={cn("scroll-m-24", className)}
         {...props}
       >
         <AccordionPrimitive.Header
@@ -101,7 +101,7 @@ export const Accordion = forwardRef<
         </AccordionPrimitive.Content>
       </AccordionPrimitive.Item>
     );
-  },
+  }
 );
 
 function CopyButton({ id }: { id: string }) {
@@ -118,9 +118,9 @@ function CopyButton({ id }: { id: string }) {
       aria-label="Copy Link"
       className={cn(
         buttonVariants({
-          color: 'ghost',
-          className: 'text-fd-muted-foreground me-2',
-        }),
+          variant: "ghost",
+          className: "text-fd-muted-foreground me-2",
+        })
       )}
       onClick={onClick}
     >
@@ -133,4 +133,4 @@ function CopyButton({ id }: { id: string }) {
   );
 }
 
-Accordion.displayName = 'Accordion';
+Accordion.displayName = "Accordion";

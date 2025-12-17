@@ -16,12 +16,10 @@
         "versioning",
         "--- Meta ---",
         "changelog",
-        "faq",
         "contributing",
         "license",
         "privacy",
-        "terms",
-        "acknowledgements"
+        "terms-conditions"
     ],
     "defaultOpen": true
 }

@@ -7,6 +7,9 @@ import (
 
 // Setup registers the global middleware stack on the router.
 func Setup(r *chi.Mux, behindProxy bool) {
+	// CORS should be registered early so preflight requests are handled
+	// and headers are present on all responses.
+	r.Use(CORS)
 	// Recoverer should be the first middleware so it catches panics from
 	// downstream handlers and converts them to 500 responses instead of
 	// crashing the whole process.

@@ -59,6 +59,7 @@ type connState struct {
 	misses        int
 	mu            sync.Mutex // protects lastHeartbeat and misses
 	writeMu       sync.Mutex // serializes writes to the websocket.Conn
+	seq           int64
 }
 
 // Server manages WebSocket subscriptions keyed by user ID. Clients should
@@ -70,7 +71,6 @@ type Server struct {
 	upgrader websocket.Upgrader
 	stateMu  sync.Mutex
 	state    map[*websocket.Conn]*connState
-	seq      int64
 	cancel   func()
 }
 
@@ -241,7 +241,14 @@ func (s *Server) watchHeartbeats(conn *websocket.Conn) {
 }
 
 func (s *Server) sendEvent(conn *websocket.Conn, event string, data any) {
-	msg := wsMessage{Op: opEvent, Seq: s.nextSeq(), T: event, D: data}
+	s.stateMu.Lock()
+	state, ok := s.state[conn]
+	s.stateMu.Unlock()
+	var seq int64
+	if ok {
+		seq = atomic.AddInt64(&state.seq, 1)
+	}
+	msg := wsMessage{Op: opEvent, Seq: seq, T: event, D: data}
 	start := time.Now()
 	err := s.writeJSON(conn, msg)
 	sendLatency.Record(time.Since(start))
@@ -339,9 +346,7 @@ func (s *Server) Close() {
 	s.stateMu.Unlock()
 }
 
-func (s *Server) nextSeq() int64 {
-	return atomic.AddInt64(&s.seq, 1)
-}
+// nextSeq removed: sequence numbering is now per-connection on connState.seq
 
 func (s *Server) sendError(conn *websocket.Conn, code string, message string, status int, retryable bool, details any) {
 	errorMessage := wsMessage{

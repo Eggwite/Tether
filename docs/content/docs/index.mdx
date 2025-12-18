@@ -1,9 +1,10 @@
 ---
 title: Quickstart
-description: Start exposing your presence data with Tether in seconds.
+description: Start exposing your presence data with Tether in seconds
+icon: PackageOpen
 ---
 ---
-import { Zap, Blocks, Pyramid, Ban, Users, AudioWaveform, Rabbit, ServerCog } from "lucide-react"
+import { Zap, Blocks, Pyramid, Ban, Users, AudioWaveform, Rabbit, ServerCog, PackageOpen } from "lucide-react"
 import ApiPlayground from "../../components/playground/live-playground";
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
@@ -215,10 +216,6 @@ if ($response !== false) {
 
 ---
 
-<Cards>
-  <Card icon={<Zap />} title="Getting Started" href="./getting-started">Step-by-step setup and examples.</Card>
-  <Card icon={<ServerCog />} title="Endpoints" href="./endpoints">Snapshot and gateway reference.</Card>
-  <Card icon={<Pyramid />} title="Presence" href="./presence">Data shape and field guarantees.</Card>
 <Card
   icon={
       <svg role="img" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -230,7 +227,7 @@ if ($response !== false) {
   href="https://github.com/Eggwite/tether"
 >
   Open source repo and contributions.
-</Card></Cards>
+</Card>
 
 <Callout title="Join the Community" type="info">
 Ask questions and share ideas in Discord: <a href="https://discord.gg/Ff5FfJzq">discord.gg/Ff5FfJzq</a>

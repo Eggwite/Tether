@@ -26,79 +26,107 @@ import {
 } from "@/components/ui/table";
 import { Send } from "lucide-react";
 import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd } from "@/components/ui/kbd";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { sendHttpRequest } from "./http";
+import { handleWebSocket } from "./websocket";
+import { cache, Result } from "./utils";
 
-type Result = {
-  status?: number;
-  headers?: [string, string][];
-  durationMs?: number;
-  body?: any;
-  error?: string;
-};
-
-// Simple in-memory cache for SWR-like behavior across component mounts.
-const cache = new Map<string, Result>();
-
+// Updated ApiPlayground component to use modularized logic
 export default function ApiPlayground() {
+  const presets = [
+    {
+      label: "Get user",
+      url: "https://tether.eggwite.moe/v1/users/{user_id}",
+      type: "http",
+    },
+    {
+      label: "Get server health",
+      url: "https://tether.eggwite.moe/healthz",
+      type: "http",
+    },
+    {
+      label: "WS Gateway",
+      url: "",
+      type: "ws",
+    },
+  ];
+
+  const [selectedPresetIndex, setSelectedPresetIndex] = useState<number | null>(
+    0
+  );
   const [url, setUrl] = useState(
     "https://tether.eggwite.moe/v1/users/{user_id}"
   );
-  // always use GET for this playground
+  const [protocol, setProtocol] = useState("http");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const heartbeatRef = useRef<number | null>(null);
 
   // Load cached value when URL changes (stale-while-revalidate)
   useEffect(() => {
     if (!url) {
-      setResult(null);
-      return;
+      return; // Do not reset result to null
     }
     const cached = cache.get(url);
-    if (cached) setResult(cached);
-  }, [url]);
-
-  const send = useCallback(async () => {
-    if (!url) return;
-    // abort previous
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setLoading(true);
-
-    const start = performance.now();
-    try {
-      const res = await fetch(url, {
-        method: "GET",
-        signal: controller.signal,
-      });
-      const durationMs = Math.round(performance.now() - start);
-      const headers = Array.from(res.headers.entries());
-      const text = await res.text();
-      let body: any = text;
-      try {
-        body = JSON.parse(text);
-      } catch {
-        // leave as text
-      }
-      const out: Result = { status: res.status, headers, durationMs, body };
-      cache.set(url, out);
-      setResult(out);
-    } catch (err: any) {
-      if (err.name === "AbortError") return;
-      setResult({ error: err.message ?? String(err) });
-    } finally {
-      setLoading(false);
+    // Only populate from cache when we don't already have a result
+    if (cached) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResult((prev) => prev ?? cached);
     }
   }, [url]);
+
+  // Dedicated WebSocket endpoint (use /ws path used in docs/screenshots)
+  const WS_ENDPOINT = "wss://tether.eggwite.moe/socket";
+
+  const handleSend = useCallback(() => {
+    if (protocol === "http") {
+      // let the HTTP helper set the result directly
+      sendHttpRequest(url, setResult, setLoading);
+      return;
+    }
+
+    // let the WebSocket helper set the result directly
+    handleWebSocket(url, setResult, wsRef, heartbeatRef, WS_ENDPOINT);
+  }, [protocol, url]);
 
   // Enter key submits
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      void send();
+      handleSend();
     }
   };
+
+  // Cleanup WS and heartbeat on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        if (heartbeatRef.current) {
+          window.clearInterval(heartbeatRef.current);
+          heartbeatRef.current = null;
+        }
+        if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+        }
+      } catch {}
+    };
+  }, []);
 
   // Nicely formatted header list
   const renderHeaders = (h?: [string, string][]) => {
@@ -157,18 +185,58 @@ export default function ApiPlayground() {
         <CardTitle>API Playground</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] md:grid-cols-[1fr_auto] items-center">
-          <Input
-            placeholder="https://api.example.com/endpoint"
-            value={url}
-            onChange={(e: any) => setUrl(e.target.value)}
-            onKeyDown={onKeyDown}
-            className="w-full"
-            aria-label="Request URL"
-          />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(220px,1fr)_auto] md:grid-cols-[minmax(220px,1fr)_auto] items-center">
+          <div className="flex gap-2 items-center w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  Presets
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {presets.map((p, i) => (
+                  <DropdownMenuItem
+                    key={p.url}
+                    onClick={() => {
+                      setSelectedPresetIndex(i);
+                      setProtocol(p.type); // Update protocol based on preset
+                      // For WS presets the input is used for IDs; clear it.
+                      if (p.type === "ws") setUrl("");
+                      else setUrl(p.url);
+                    }}
+                  >
+                    {p.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Select value={protocol} onValueChange={setProtocol}>
+              <SelectTrigger className="w-45">
+                <SelectValue placeholder="Protocol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="http">HTTP</SelectItem>
+                <SelectItem value="ws">WebSocket</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Input
+              placeholder={
+                protocol === "ws"
+                  ? "Input IDs comma separated"
+                  : "https://api.example.com/endpoint"
+              }
+              value={url}
+              onChange={(e: any) => setUrl(e.target.value)}
+              onKeyDown={onKeyDown}
+              className="w-full"
+              aria-label={protocol === "ws" ? "User IDs input" : "Request URL"}
+            />
+          </div>
 
           <div className="flex items-center gap-2 w-full justify-end">
-            <Button onClick={() => void send()} disabled={loading} size="sm">
+            <Button onClick={handleSend} disabled={loading} size="sm">
               <Send className="-ml-1 mr-2 h-4 w-4" />
               Send
             </Button>

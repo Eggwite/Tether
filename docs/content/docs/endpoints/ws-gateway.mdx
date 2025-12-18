@@ -16,7 +16,7 @@ description: How to connect to and interact with the WebSocket gateway for real-
 <Tab>
 ```js title="websocket.js"
 // Minimal example: subscribe to presence updates for a user
-const ws = new WebSocket("ws://tether.eggwite.moe/socket");
+const ws = new WebSocket("wss://tether.eggwite.moe/socket");
 
 let heartbeatInterval = null;
 
@@ -85,7 +85,7 @@ def on_close(ws_app, close_status_code, close_msg):
 def on_open(ws_app):
     pass
 
-ws = WebSocketApp("ws://tether.eggwite.moe/socket",
+ws = WebSocketApp("wss://tether.eggwite.moe/socket",
                   on_message=on_message,
                   on_close=on_close,
                   on_open=on_open)

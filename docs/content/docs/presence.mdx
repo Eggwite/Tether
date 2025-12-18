@@ -39,7 +39,7 @@ WS ws://tether.eggwite.moe/socket
 {
   "op": 2,
   "d": {
-    "subscribe_to_ids": ["example_user_id_1", "example_user_id_2"]
+    "subscribe_to_ids": ["123456789012345678", "987654321098765432"]
   }
 }
 ```
@@ -47,16 +47,18 @@ WS ws://tether.eggwite.moe/socket
     Check the WebSocket Gateway documentation for details on subscribing to user IDs and receiving presence updates.
   </Card>
 ---
-When subscribed to user IDs via the WebSocket gateway, presence updates will include presence objects in the `d` field of `PRESENCE_UPDATE` events.
+When subscribed to user IDs via the WebSocket gateway, presence updates will include presence objects in the `d` field of `PRESENCE_UPDATE` and `user_id`, useful when watching multiple users.
 
 ```json title="PRESENCE_UPDATE"
 {
   "op": 0,
   "seq": 123,
   "t": "PRESENCE_UPDATE",
-  "d": {
-    // PresenceData
-    ...
+   "d": {
+    "user_id": "123456789012345678",
+    "data": {
+      // PresenceData
+      ...
   }
 }
 ```

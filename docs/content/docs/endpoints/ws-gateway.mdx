@@ -2,6 +2,8 @@
 title: WS /socket
 description: How to connect to and interact with the WebSocket gateway for real-time presence updates.
 ---
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
 ---
 
 ## WebSocket Endpoint
@@ -9,6 +11,306 @@ description: How to connect to and interact with the WebSocket gateway for real-
 | Method | Path      | Description                      |
 |--------|-----------|----------------------------------|
 | WS     | /socket   | WebSocket gateway for presence   |
+
+
+## Protocol
+
+| Opcode | Name       | Direction         | Description                                 |
+|--------|------------|------------------|---------------------------------------------|
+| `0`      | EVENT      | Server → Client   | Presence/event updates                      |
+| `1`      | HELLO      | Server → Client   | Greeting, includes `heartbeat_interval`     |
+| `2`      | INITIALIZE | Client → Server   | Subscribe to user IDs                       |
+| `3`      | HEARTBEAT  | Both              | Heartbeat ping/ack                          |
+
+Here is the sequence diagram for a typical connection:
+
+<Mermaid chart="
+sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: Connect /socket
+    Server-->>Client: HELLO (op:1, heartbeat_interval)
+    Client->>Server: INITIALIZE (op:2, subscribe_to_ids)
+    Server-->>Client: EVENT (op:0, PRESENCE_UPDATE)
+    loop 
+        Note over Client,Server: Heartbeat loop to keep connection alive
+        Client->>Server: HEARTBEAT (op:3)
+        Server-->>Client: HEARTBEAT (op:3)
+    end
+"/>
+
+
+## Messages
+
+<Tabs items={["HELLO", "INITIALIZE", "HEARTBEAT", "EVENT"]}>
+<Tab>
+#### HELLO Message
+
+Sent by the server to the client upon connection.
+
+```json
+{
+  "op": 1,
+  "d": {
+    "heartbeat_interval": 30000
+  }
+}
+```
+</Tab><Tab>
+#### INITIALIZE Message
+
+Sent by the client to the server to subscribe to user IDs.
+
+```json
+{
+  "op": 2,
+  "d": {
+    "subscribe_to_ids": ["example_user_id_1", "example_user_id_2"]
+  }
+}
+```
+</Tab>
+
+<Tab>
+
+#### HEARTBEAT Message
+
+Sent by both the client and server to keep the connection alive.
+
+```json
+{
+  "op": 3
+}
+```
+</Tab>
+
+<Tab>
+
+#### EVENT Message
+
+The WebSocket gateway sends events to subscribed clients when presence data changes, such as whenever the bot receives a presence update from Discord for a subscribed user.
+
+```json title="PRESENCE_UPDATE"
+{
+  "op": 0,
+  "seq": 123,
+  "t": "PRESENCE_UPDATE",
+  "d": {
+    "user_id": "example_user_id",
+    "data": "..."
+  }
+}
+```
+
+<Callout type="tip">
+  The `data` field contains a snapshot of presence object for the user.
+  See [Presence Data Model](./data-models#presence-data-model)
+</Callout>
+
+</Tab>
+
+
+</Tabs>
+
+<Callout title="Note" type="warn">
+  The following limitations apply to clients connecting to the **WebSocket gateway**.
+| Limitation             | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| Frame Size Limit       | The server caps inbound frame size to `1 MiB` |
+| Missed Heartbeats      | The server allows up to `3` missed heartbeats before disconnecting the client. |
+</Callout>
+
+## Message Details
+
+### The `seq` (Sequence) Field
+
+Most messages sent from the server include a `seq` field, which is a per-connection sequence number. This number starts at `1` for each new connection and increases by `1` with every event message sent to the client.  
+1. **Purpose:** The `seq` field allows clients to track the order of messages and detect if any messages are missed or received out of order.
+2. **Scope:** The sequence is unique to each connection and resets when a new WebSocket session is established.
+
+Example:
+```json
+{
+  "op": 0,
+  "seq": 5, // --> This is the 5th event message sent on this connection
+  "t": "PRESENCE_UPDATE",
+  "d": {
+    "user_id": "123456789012345678",
+    "data": {
+      // PresenceData
+      ...
+  }
+}
+```
+
+### Subscribing to User IDs
+
+When initializing the connection, clients must send an `INITIALIZE` message with a `subscribe_to_ids` field. This field is always an array, even if you are subscribing to a single user ID.
+
+**Example:**
+```json
+{
+  "op": 2,
+  "d": {
+    "subscribe_to_ids": ["1234567890"]
+  }
+}
+```
+or for multiple users:
+```json
+{
+  "op": 2,
+  "d": {
+    "subscribe_to_ids": ["1234567890", "0987654321"]
+  }
+}
+```
+<Callout type="tip">
+Always use an array for `subscribe_to_ids`, even for a single user.
+</Callout>
+
+### Watching Multiple Users
+
+When you subscribe to multiple user IDs using the `subscribe_to_ids` array, the server will send you updates for each user individually:
+
+- **Initial State:**  
+  After subscribing, you will receive a separate initial presence event for each user you requested. Each event contains only one user's data, identified by the `user_id` field in the event payload.
+
+- **Live Updates:**  
+  Whenever any of your subscribed users changes presence, you will receive a `PRESENCE_UPDATE` event for that specific user. Each update only contains data for a single user, and the `user_id` field tells you which user the update is for.
+
+#### Recommended Tracking Pattern
+
+To keep track of the most recent presence data for all users you are watching:
+
+<Steps>
+
+<Step>
+**Maintain a Local Map:**  
+   Create a local dictionary or map where the keys are user IDs and the values are the latest presence data for each user.
+
+</Step>
+
+<Step>
+**On Each Event:**  
+   When you receive an event (either the initial state or a live update), use the `user_id` field in the event payload to update the entry in your map for the corresponding user.
+
+</Step>
+
+<Step>
+**Access Latest Data:**  
+   At any time, your map will contain the most recent presence information for every user you are tracking, keyed by `user_id`.
+
+</Step>
+
+</Steps>
+
+
+**Example (JavaScript):**
+<Tabs items={["JavaScript", "Python"]}>
+<Tab>
+```js title="Track presence for multiple users"
+// Map to store the latest presence for each user
+const userPresence = {};
+
+const ws = new WebSocket("wss://tether.eggwite.moe/socket");
+
+let heartbeatInterval = null;
+
+ws.onmessage = (evt) => {
+	const msg = JSON.parse(evt.data);
+
+	if (msg.op === 1) {
+		// Start heartbeats
+		heartbeatInterval = setInterval(
+			() => ws.send(JSON.stringify({ op: 3 })),
+			msg.d.heartbeat_interval
+		);
+
+		// Subscribe to multiple users
+		ws.send(
+			JSON.stringify({
+				op: 2,
+				d: { subscribe_to_ids: ["1234567890", "0987654321"] }
+			})
+		);
+	}
+
+	if (msg.op === 0 && msg.t === "PRESENCE_UPDATE") {
+		const { user_id, data } = msg.d;
+		// Update the presence for the correct user
+		userPresence[user_id] = data;
+		console.log(`Presence update for ${user_id}:`, data);
+	}
+};
+
+ws.onclose = () => {
+	if (heartbeatInterval) clearInterval(heartbeatInterval);
+};
+```
+</Tab>
+<Tab>
+```bash title="requirements.txt"
+pip install websocket-client
+```
+```python title="Track presence for multiple users"
+import json
+import threading
+import time
+from websocket import WebSocketApp
+
+user_presence = {}
+heartbeat_interval = None
+
+def on_message(ws_app, message):
+    global heartbeat_interval
+    msg = json.loads(message)
+
+    if msg.get("op") == 1:
+        # Start heartbeats (interval in ms)
+        heartbeat_interval = msg["d"]["heartbeat_interval"] / 1000.0
+
+        def heartbeat():
+            while True:
+                time.sleep(heartbeat_interval)
+                try:
+                    ws_app.send(json.dumps({"op": 3}))
+                except Exception:
+                    break
+
+        threading.Thread(target=heartbeat, daemon=True).start()
+
+        # Subscribe to multiple users
+        ws_app.send(json.dumps({
+            "op": 2,
+            "d": {"subscribe_to_ids": ["1234567890", "0987654321"]}
+        }))
+
+    elif msg.get("op") == 0 and msg.get("t") == "PRESENCE_UPDATE":
+        user_id = msg["d"]["user_id"]
+        data = msg["d"]["data"]
+        user_presence[user_id] = data
+        print(f"Presence update for {user_id}: {data}")
+
+def on_close(ws_app, close_status_code, close_msg):
+    print("WebSocket closed")
+
+def on_open(ws_app):
+    print("WebSocket connection opened")
+
+if __name__ == "__main__":
+    ws = WebSocketApp(
+        "wss://tether.eggwite.moe/socket",
+        on_message=on_message,
+        on_close=on_close,
+        on_open=on_open
+    )
+    ws.run_forever()
+```
+</Tab>
+</Tabs>
+
+
 
 ### Example: Subscribe and receive updates
 
@@ -44,10 +346,10 @@ ws.onclose = () => { if (heartbeatInterval) clearInterval(heartbeatInterval); };
 ```
 </Tab>
 <Tab>
-```python
+```bash title="requirements.txt"
 pip install websocket-client
 ```
-```python
+```python title="websocket.py"
 import json
 import threading
 import time
@@ -98,110 +400,6 @@ ws.run_forever()
   You must send heartbeats at the interval specified in the `HELLO` message.
 </Callout>
 
-## Protocol
-
-| Opcode | Name       | Direction         | Description                                 |
-|--------|------------|------------------|---------------------------------------------|
-| `0`      | EVENT      | Server → Client   | Presence/event updates                      |
-| `1`      | HELLO      | Server → Client   | Greeting, includes `heartbeat_interval`     |
-| `2`      | INITIALIZE | Client → Server   | Subscribe to user IDs                       |
-| `3`      | HEARTBEAT  | Both              | Heartbeat ping/ack                          |
-
-Here is the sequence diagram for a typical connection:
-
-<Mermaid chart="
-sequenceDiagram
-    participant Client
-    participant Server
-    Client->>Server: Connect /socket
-    Server-->>Client: HELLO (op:1, heartbeat_interval)
-    Client->>Server: INITIALIZE (op:2, subscribe_to_ids)
-    Server-->>Client: EVENT (op:0, PRESENCE_UPDATE)
-    loop 
-        Note over Client,Server: Heartbeat loop to keep connection alive
-        Client->>Server: HEARTBEAT (op:3)
-        Server-->>Client: HEARTBEAT (op:3)
-    end
-"/>
-
-## Messages
-
-<Tabs items={["HELLO", "INITIALIZE", "HEARTBEAT", "EVENT"]}>
-<Tab>
-#### HELLO Message
-
-Sent by the server to the client upon connection.
-
-```json
-{
-  "op": 1,
-  "d": {
-    "heartbeat_interval": 30000
-  }
-}
-```
-</Tab><Tab>
-#### INITIALIZE Message
-
-Sent by the client to the server to subscribe to user IDs.
-
-```json
-{
-  "op": 2,
-  "d": {
-    "subscribe_to_ids": ["example_user_id_1", "example_user_id_2"]
-  }
-}
-```
-</Tab>
-
-<Tab>
-#### HEARTBEAT Message
-
-Sent by both the client and server to keep the connection alive.
-
-```json
-{
-  "op": 3
-}
-```
-</Tab>
-
-<Tab>
-
-#### EVENT Message
-
-The WebSocket gateway sends events to subscribed clients when presence data changes, such as whenever the bot receives a presence update from Discord for a subscribed user.
-
-```json title="PRESENCE_UPDATE"
-{
-  "op": 0,
-  "seq": 123,
-  "t": "PRESENCE_UPDATE",
-  "d": {
-    "user_id": "example_user_id",
-    "data": "..."
-  }
-}
-```
-
-<Callout type="tip">
-  The `data` field contains a snapshot of presence object for the user.
-  See [Presence Data Model](./data-models#presence-data-model)
-</Callout>
-
-</Tab>
-
-
-</Tabs>
-
-<Callout title="Note" type="warn">
-  The following limitations apply to clients connecting to the **WebSocket gateway**.
-| Limitation             | Description                                                                 |
-|------------------------|-----------------------------------------------------------------------------|
-| Frame Size Limit       | The server caps inbound frame size to `1 MiB` |
-| Missed Heartbeats      | The server allows up to `3` missed heartbeats before disconnecting the client. |
-</Callout>
 
 ### Error Codes
 
@@ -212,6 +410,28 @@ The WebSocket gateway sends events to subscribed clients when presence data chan
 | `4006`  | invalid_payload     | `INITIALIZE` message provided no IDs or empty subscriptions.            |
 
 
-<Callout>
+<Callout type="warn">
   The server does not return error messages in response to invalid messages. Instead, it closes the connection with the appropriate close code.
 </Callout>
+
+## Need Help? / Troubleshooting
+
+If you run into issues or have questions about using the WebSocket gateway:
+
+- **Open an Issue:**  
+  Visit the [contributing page’s issues section](/docs/contributing#asking-questions) for guidance, or [open a new issue on GitHub](https://github.com/Eggwite/tether/issues).
+
+<Card
+  icon={
+      <svg role="img" viewBox="0 0 24 24" width="20" height="20" fill="#5865F2" xmlns="http://www.w3.org/2000/svg">
+        <title>Discord</title>
+        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276c-.598.3428-1.2205.6447-1.8733.8923a.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
+      </svg>
+  }
+  href="https://discord.gg/Ff5FfJzq"
+  title="Join the Official Tether Discord Server"
+>
+  Get support and connect with the community.
+</Card>
+
+Please provide as much detail as possible (error messages, steps to reproduce, etc.) when asking for help!

@@ -4,6 +4,18 @@ import { Result, cache } from "./utils";
 export async function sendHttpRequest(url: string, setResult: (result: Result | null) => void, setLoading: (loading: boolean) => void) {
   if (!url) return;
 
+  // validate URL: must be absolute and use http or https
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      setResult({ error: "invalid url: protocol must be http or https" });
+      return;
+    }
+  } catch (e: any) {
+    setResult({ error: "invalid url" });
+    return;
+  }
+
   const controller = new AbortController();
   setLoading(true);
 

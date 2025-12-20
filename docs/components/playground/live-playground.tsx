@@ -185,42 +185,45 @@ export default function ApiPlayground() {
         <CardTitle>API Playground</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(220px,1fr)_auto] md:grid-cols-[minmax(220px,1fr)_auto] items-center">
-          <div className="flex gap-2 items-center w-full">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline">
-                  Presets
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {presets.map((p, i) => (
-                  <DropdownMenuItem
-                    key={p.url}
-                    onClick={() => {
-                      setSelectedPresetIndex(i);
-                      setProtocol(p.type); // Update protocol based on preset
-                      // For WS presets the input is used for IDs; clear it.
-                      if (p.type === "ws") setUrl("");
-                      else setUrl(p.url);
-                    }}
-                  >
-                    {p.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+        {/* Responsive input and button layout */}
+        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(220px,1fr)_auto] items-center">
+          {/* Presets, protocol, and input field */}
+          <div className="flex flex-col gap-2 w-full lg:flex-row lg:items-center">
+            <div className="flex gap-1 items-center w-full justify-between">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    Presets
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {presets.map((p, i) => (
+                    <DropdownMenuItem
+                      key={p.url}
+                      onClick={() => {
+                        setSelectedPresetIndex(i);
+                        setProtocol(p.type); // Update protocol based on preset
+                        // For WS presets the input is used for IDs; clear it.
+                        if (p.type === "ws") setUrl("");
+                        else setUrl(p.url);
+                      }}
+                    >
+                      {p.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            <Select value={protocol} onValueChange={setProtocol}>
-              <SelectTrigger className="w-45">
-                <SelectValue placeholder="Protocol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="http">HTTP</SelectItem>
-                <SelectItem value="ws">WebSocket</SelectItem>
-              </SelectContent>
-            </Select>
-
+              <Select value={protocol} onValueChange={setProtocol}>
+                <SelectTrigger className="w-45">
+                  <SelectValue placeholder="Protocol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="http">HTTP</SelectItem>
+                  <SelectItem value="ws">WebSocket</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Input
               placeholder={
                 protocol === "ws"
@@ -230,13 +233,19 @@ export default function ApiPlayground() {
               value={url}
               onChange={(e: any) => setUrl(e.target.value)}
               onKeyDown={onKeyDown}
-              className="w-full"
+              className="w-full mt-2 md:mt-0"
               aria-label={protocol === "ws" ? "User IDs input" : "Request URL"}
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full justify-end">
-            <Button onClick={handleSend} disabled={loading} size="sm">
+          {/* Send button row, full width on mobile */}
+          <div className="flex items-center gap-2 w-full justify-end mt-2 md:mt-0">
+            <Button
+              onClick={handleSend}
+              disabled={loading}
+              size="sm"
+              className="flex-1"
+            >
               <Send className="-ml-1 mr-2 h-4 w-4" />
               Send
             </Button>

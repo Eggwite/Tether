@@ -1,9 +1,9 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/black.css';
 @import 'fumadocs-ui/css/preset.css';
 @import 'fumadocs-twoslash/twoslash.css';
 @import "tw-animate-css";
-
+/* 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -45,8 +45,9 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-}
+} */
 
+/* 
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -114,8 +115,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-}
-
+} */
+/* 
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -124,4 +125,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}
+} */

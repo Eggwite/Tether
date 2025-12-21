@@ -8,7 +8,7 @@ Tether streams your Discord presence and activities to your website via REST API
 
 Visit here to visit the quickstart on the docs. [Documentation](https://tether-ebon-kappa.vercel.app/docs)
 
-Join the Tether Discord server [here](https://discord.gg/XwdbhtnhKn) to start observing your presence. (discord.gg/Ff5FfJzq)
+Join the Tether Discord server [here](https://discord.gg/XwdbhtnhKn) to start observing your presence. (discord.gg/XwdbhtnhKn)
 
 > [!IMPORTANT]  
 > For those not self-hosting, you must join the discord server to let the API observe your presence.

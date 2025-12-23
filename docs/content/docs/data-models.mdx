@@ -13,12 +13,11 @@ Represents the current presence state of a Discord user.
 
 | Field                  | Type                  | Description                                                                                     |
 |------------------------|-----------------------|-------------------------------------------------------------------------------------------------|
-| `active_clients`       | array of string      | A list of platforms the user is currently active on. **Allowed values**: `desktop`, `mobile`, `web`, `embedded`. Order is not meaningful. The list may be empty or omitted if no clients are active. |
-| `primary_active_client`| string, optional      | The platform considered primary when multiple clients are active. Guaranteed to be one of `active_clients` when present. |
+| `clients`              | object                | An object grouping client information. Contains `active` (array of string) and `primary` (string). |
 | `listening_to_spotify` | boolean               | Indicates whether the user is actively listening to Spotify.                                   |
 | `spotify`              | object or null        | Present only when `listening_to_spotify` is true. If `listening_to_spotify` is false, `spotify` will be null. |
 | `discord_user`         | object               | Basic Discord user identity information.                                                      |
-| `discord_status`       | string               | **Allowed values**: `online`, `idle`, `dnd`, `offline`.                                        |
+| `status`               | string               | **Allowed values**: `online`, `idle`, `dnd`, `offline`.                                        |
 | `activities`           | array of object      | A list of active Discord activities.  |
 
 <Callout title="Note" type="warn">

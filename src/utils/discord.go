@@ -328,3 +328,77 @@ func ExtractRawIdentityFromPayload(payload map[string]any) (user, member map[str
 
 	return userVal, memberMap
 }
+
+// Define a Presence struct to encapsulate related fields
+// This struct mirrors the conceptual grouping of presence data.
+type Presence struct {
+	Status     string          `json:"status"`
+	Clients    PresenceClients `json:"clients"`
+	Activities []any           `json:"activities"`
+	Spotify    any             `json:"spotify"`
+}
+
+type PresenceClients struct {
+	Active  []string `json:"active"`
+	Primary string   `json:"primary"`
+}
+
+// BuildPresence constructs a Presence object from a raw Discord payload.
+func BuildPresence(payload map[string]any) *Presence {
+	if payload == nil {
+		return nil
+	}
+
+	// Extract status
+	status := GetString(payload["discord_status"])
+
+	// Extract clients
+	clients := PresenceClients{
+		Active:  ExtractActiveClients(payload["active_clients"]),
+		Primary: GetString(payload["primary_active_client"]),
+	}
+
+	// Extract activities
+	activities := ExtractRawActivities(payload)
+
+	// Extract Spotify data
+	var spotify any
+	if IsListeningToSpotify(payload) {
+		spotify = payload["spotify"]
+	}
+
+	return &Presence{
+		Status:     status,
+		Clients:    clients,
+		Activities: activities,
+		Spotify:    spotify,
+	}
+}
+
+// ExtractActiveClients converts raw active_clients data into a string slice.
+func ExtractActiveClients(raw any) []string {
+	if raw == nil {
+		return nil
+	}
+
+	clients, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+
+	result := make([]string, 0, len(clients))
+	for _, client := range clients {
+		if clientStr := GetString(client); clientStr != "" {
+			result = append(result, clientStr)
+		}
+	}
+	return result
+}
+
+// IsListeningToSpotify checks if the user is currently listening to Spotify.
+func IsListeningToSpotify(payload map[string]any) bool {
+	if payload == nil {
+		return false
+	}
+	return GetBool(payload["listening_to_spotify"])
+}

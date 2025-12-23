@@ -53,7 +53,8 @@ func (h SnapshotHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, utils.SuccessResponse(presence))
+	public := utils.PublicPresenceFromStore(presence)
+	utils.WriteJSON(w, http.StatusOK, utils.SuccessResponse(public))
 }
 
 // HealthHandler is a simple readiness probe.

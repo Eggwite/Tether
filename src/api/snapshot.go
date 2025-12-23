@@ -5,6 +5,7 @@ import (
 
 	"tether/src/store"
 	"tether/src/utils"
+	"tether/src/utils/response"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -43,17 +44,11 @@ func (h SnapshotHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	presence, ok := h.Store.GetPresence(userID)
 	if !ok {
-		utils.WriteJSON(w, http.StatusNotFound, utils.ErrorResponse(
-			"USER_NOT_FOUND",
-			"User is not being monitored by Tether",
-			http.StatusNotFound,
-			false,
-			nil,
-		))
+		utils.WriteJSON(w, http.StatusNotFound, response.UserNotFound())
 		return
 	}
 
-	public := utils.PublicPresenceFromStore(presence)
+	public := PublicPresenceFromStore(presence)
 	utils.WriteJSON(w, http.StatusOK, utils.SuccessResponse(public))
 }
 

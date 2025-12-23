@@ -21,6 +21,7 @@ type Response struct {
 	Data    any  `json:"data"`
 }
 
+// TODO: update structs to match current API response shapes
 func TestCompareLocalAndLanyardAPI(t *testing.T) {
 
 	userID := "672569780716175370"

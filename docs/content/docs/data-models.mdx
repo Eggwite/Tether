@@ -29,32 +29,6 @@ Represents the current presence state of a Discord user.
 
 ```json
 {
-  "active_clients": ["desktop", "mobile"],
-  "primary_active_client": "desktop",
-  "listening_to_spotify": true,
-  "spotify": {
-    "track_id": "example_track_id",
-    "timestamps": {
-      "start": 1672531200000,
-      "end": 1672534800000
-    },
-    "song": "Example Song",
-    "artist": "Example Artist",
-    "album_art_url": "https://example.com/album_art.jpg",
-    "album": "Example Album"
-  },
-  "discord_user": {
-    "id": "example_user_id",
-    "username": "example_user",
-    "global_name": "Example User",
-    "display_name": "Example",
-    "avatar": "example_avatar_hash",
-    "avatar_url": "https://example.com/avatar.jpg",
-    "discriminator": "1234",
-    "bot": false,
-    "public_flags": 64
-  },
-  "discord_status": "online",
   "activities": [
     {
       "type": 4,
@@ -78,7 +52,35 @@ Represents the current presence state of a Discord user.
         "large_text": "Example Album"
       }
     }
-  ]
+  ],
+  "clients": {
+    "active": ["desktop", "mobile"],
+    "primary": "desktop"
+  },
+  "discord_user": {
+    "id": "example_user_id",
+    "username": "example_user",
+    "global_name": "Example User",
+    "display_name": "Example",
+    "avatar": "example_avatar_hash",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "discriminator": "1234",
+    "bot": false,
+    "public_flags": 64
+  },
+  "listening_to_spotify": true,
+  "spotify": {
+    "track_id": "example_track_id",
+    "timestamps": {
+      "start": 1672531200000,
+      "end": 1672534800000
+    },
+    "song": "Example Song",
+    "artist": "Example Artist",
+    "album_art_url": "https://example.com/album_art.jpg",
+    "album": "Example Album"
+  },
+  "status": "online"
 }
 ```
 
@@ -87,13 +89,12 @@ Represents the current presence state of a Discord user.
 
 ```go
 type PresenceData struct {
-    ActiveClients         []string          `json:"active_clients,omitempty"`
-    PrimaryActiveClient   string            `json:"primary_active_client,omitempty"`
-    ListeningToSpotify    bool              `json:"listening_to_spotify"`
-    Spotify               *Spotify          `json:"spotify"`
-    DiscordUser           DiscordUser       `json:"discord_user"`
-    DiscordStatus         string            `json:"discord_status"`
-    Activities            []Activity        `json:"activities"`
+    Status             string   `json:"status"` // User's online status
+    Clients            Clients  `json:"clients"` // Active and primary clients
+    Activities         []any    `json:"activities"` // User's activities
+    Spotify            *Spotify `json:"spotify,omitempty"` // Spotify activity (if any)
+    DiscordUser        User     `json:"discord_user"` // Discord user details
+    ListeningToSpotify bool     `json:"listening_to_spotify"` // Spotify listening flag
 }
 ```
 

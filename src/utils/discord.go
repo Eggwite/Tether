@@ -271,18 +271,26 @@ func IsSpotifyActivity(act map[string]any) bool {
 	return actType == 2 || actName == "Spotify"
 }
 
-// GetSpotifyTrackID extracts Spotify track ID from activity.
-// DISCORD QUIRK: Spotify track IDs are sent as "sync_id" in the Gateway,
-// but discordgo's Activity struct doesn't include this field (as of most versions).
-
-// This function checks both field names and returns the first non-empty value.
-// Returns empty string if neither field exists.
+// GetSpotifyTrackID extracts the Spotify track ID from a raw activity map.
+// DISCORD QUIRK: the gateway commonly provides the track ID as "sync_id".
+// Tether treats "sync_id" as an input alias for "track_id" and only exposes
+// a single field (`track_id`) in the public Spotify model.
 func GetSpotifyTrackID(act map[string]any) string {
 	syncID := GetString(act["sync_id"])
 	if syncID == "" {
 		syncID = GetString(act["track_id"])
 	}
 	return syncID
+}
+
+// GetSpotifyPartyID extracts the party id from a Spotify activity.
+// Discord sends it as: {"party": {"id": "spotify:<user_id>"}}
+func GetSpotifyPartyID(act map[string]any) string {
+	party, ok := act["party"].(map[string]any)
+	if !ok {
+		return ""
+	}
+	return GetString(party["id"])
 }
 
 // LooksLikeMemberPayload checks if a payload contains member fields.
@@ -361,11 +369,9 @@ func BuildPresence(payload map[string]any) *Presence {
 	// Extract activities
 	activities := ExtractRawActivities(payload)
 
-	// Extract Spotify data
+	// Extract Spotify data: use the `spotify` field directly and allow it to be nil
 	var spotify any
-	if IsListeningToSpotify(payload) {
-		spotify = payload["spotify"]
-	}
+	spotify = payload["spotify"]
 
 	return &Presence{
 		Status:     status,
@@ -393,12 +399,4 @@ func ExtractActiveClients(raw any) []string {
 		}
 	}
 	return result
-}
-
-// IsListeningToSpotify checks if the user is currently listening to Spotify.
-func IsListeningToSpotify(payload map[string]any) bool {
-	if payload == nil {
-		return false
-	}
-	return GetBool(payload["listening_to_spotify"])
 }

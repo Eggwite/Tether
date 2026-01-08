@@ -13,16 +13,16 @@ Represents the current presence state of a Discord user.
 
 | Field                  | Type                  | Description                                                                                     |
 |------------------------|-----------------------|-------------------------------------------------------------------------------------------------|
-| `clients`              | object                | An object grouping client information. Contains `active` (array of string) and `primary` (string). |
-| `listening_to_spotify` | boolean               | Indicates whether the user is actively listening to Spotify.                                   |
-| `spotify`              | object or null        | Present only when `listening_to_spotify` is true. If `listening_to_spotify` is false, `spotify` will be null. |
-| `discord_user`         | object               | Basic Discord user identity information.                                                      |
 | `status`               | string               | **Allowed values**: `online`, `idle`, `dnd`, `offline`.                                        |
-| `activities`           | array of object      | A list of active Discord activities.  |
+| `activities`           | array of object      | A list of active Discord activities, including detailed fields like `emoji`, `assets`, and `timestamps`. |
+| `clients`              | object                | An object grouping client information. Contains `active` (array of string) and `primary` (string). |
+| `discord_user`         | object               | Basic Discord user identity information, including `avatar_decoration_data` and `primary_guild`. |
+| `spotify`              | object or null       | Present only when the user is actively listening to Spotify.                                    |
 
 <Callout title="Note" type="warn">
   The `Activity` object is a partially structured payload derived from Discord’s gateway. Fields may be added over time without a breaking version bump or due to changes in Discord's API. Clients should ignore unknown fields.
 </Callout>
+
 <Tabs items={["JSON", "Go"]}>
   <Tab>
 
@@ -30,54 +30,82 @@ Represents the current presence state of a Discord user.
 {
   "activities": [
     {
-      "type": 4,
-      "name": "Custom Status",
-      "state": "Example custom status",
+      "created_at": 1767862082571,
       "emoji": {
-        "name": "😊"
-      }
+        "name": "🍰"
+      },
+      "id": "custom",
+      "name": "Custom Status",
+      "session_id": "b2688c7311af71cac3f5b564df161e8c",
+      "state": "Startorch academy scholar",
+      "type": 4
     },
     {
-      "type": 2,
-      "name": "Spotify",
-      "details": "Example Song",
-      "state": "Example Artist",
-      "timestamps": {
-        "start": 1672531200000,
-        "end": 1672534800000
-      },
+      "application_id": "383226320970055681",
       "assets": {
-        "large_image": "spotify:example_large_image",
-        "large_text": "Example Album"
-      }
+        "large_image": "1359299015484768338",
+        "large_image_url": "https://cdn.discordapp.com/app-assets/383226320970055681/1359299015484768338.webp",
+        "large_text": "Editing a JSON file",
+        "small_image": "1359299466493956258",
+        "small_image_url": "https://cdn.discordapp.com/app-assets/383226320970055681/1359299466493956258.webp",
+        "small_text": "Visual Studio Code"
+      },
+      "created_at": 1767862080472,
+      "details": "Editing temp_current.json",
+      "id": "4dc2afc1b4e8c182",
+      "name": "Visual Studio Code",
+      "platform": "desktop",
+      "session_id": "b2688c7311af71cac3f5b564df161e8c",
+      "state": "Workspace: ​​",
+      "timestamps": {
+        "start": 1767859918293
+      },
+      "type": 0
     }
   ],
   "clients": {
-    "active": ["desktop", "mobile"],
+    "active": [
+      "desktop"
+    ],
     "primary": "desktop"
   },
   "discord_user": {
-    "id": "example_user_id",
-    "username": "example_user",
-    "global_name": "Example User",
-    "display_name": "Example",
-    "avatar": "example_avatar_hash",
-    "avatar_url": "https://example.com/avatar.jpg",
-    "discriminator": "1234",
+    "id": "672569780716175370",
+    "username": "eggwite",
+    "global_name": "𝐸𝑔𝑔𝓌𝑜𝓊𝓁𝒹𝓃'𝓉",
+    "display_name": "𝐸𝑔𝑔𝓌𝑜𝓊𝓁𝒹𝓃'𝓉",
+    "avatar": "e4b9454871f5c161bcbdc9640ef8ce53",
+    "avatar_url": "https://cdn.discordapp.com/avatars/672569780716175370/e4b9454871f5c161bcbdc9640ef8ce53.webp?size=256",
+    "discriminator": "0",
+    "avatar_decoration_data": {
+      "asset": "a_c3cffc19e9784f7d0b005eecdf1b566e",
+      "avatar_decoration_url": "https://cdn.discordapp.com/avatar-decoration-presets/a_c3cffc19e9784f7d0b005eecdf1b566e.png?size=240&passthrough=true",
+      "expires_at": null,
+      "sku_id": "1212569433839636530"
+    },
+    "primary_guild": {
+      "badge": "1ed9dbd4ad1c8ba83484f6767f8c4afd",
+      "badge_url": "https://cdn.discordapp.com/clan-badges/778820142138261505/1ed9dbd4ad1c8ba83484f6767f8c4afd.png?size=32",
+      "identity_enabled": true,
+      "identity_guild_id": "778820142138261505",
+      "tag": "˚+"
+    },
+    "collectibles": null,
+    "display_name_styles": null,
     "bot": false,
     "public_flags": 64
   },
-  "listening_to_spotify": true,
   "spotify": {
-    "track_id": "example_track_id",
+    "track_id": "32zpHDchUY83w80C8mMtOs",
+    "party_id": "spotify:672569780716175370",
     "timestamps": {
-      "start": 1672531200000,
-      "end": 1672534800000
+      "start": 1767862010530,
+      "end": 1767862152412
     },
-    "song": "Example Song",
-    "artist": "Example Artist",
-    "album_art_url": "https://example.com/album_art.jpg",
-    "album": "Example Album"
+    "song": "QUEEN",
+    "artist": "Kanaria",
+    "album_art_url": "https://i.scdn.co/image/ab67616d0000b273dd18a7c8679c1c78f1f12e2d",
+    "album": "QUEEN"
   },
   "status": "online"
 }
@@ -88,16 +116,90 @@ Represents the current presence state of a Discord user.
 
 ```go
 type PresenceData struct {
-    Status             string   `json:"status"` // User's online status
-    Clients            Clients  `json:"clients"` // Active and primary clients
-    Activities         []any    `json:"activities"` // User's activities
-    Spotify            *Spotify `json:"spotify,omitempty"` // Spotify activity (if any)
-    DiscordUser        User     `json:"discord_user"` // Discord user details
-    ListeningToSpotify bool     `json:"listening_to_spotify"` // Spotify listening flag
+    Status      string      `json:"status"` // User's online status
+    Activities  []Activity  `json:"activities"` // User's activities
+    Clients     Clients     `json:"clients"` // Active and primary clients
+    DiscordUser DiscordUser `json:"discord_user"` // Discord user details
+    Spotify     *Spotify    `json:"spotify,omitempty"` // Spotify activity (if any)
 }
-```
 
-  </Tab>
+type Activity struct {
+    ID          string     `json:"id"`
+    Name        string     `json:"name"`
+    Type        int        `json:"type"`
+    CreatedAt   int64      `json:"created_at"`
+    SessionID   string     `json:"session_id"`
+    Emoji       *Emoji     `json:"emoji,omitempty"`
+    Details     string     `json:"details,omitempty"`
+    State       string     `json:"state,omitempty"`
+    Platform    string     `json:"platform,omitempty"`
+    Assets      *Assets    `json:"assets,omitempty"`
+    Timestamps  *Timestamps `json:"timestamps,omitempty"`
+}
+
+type Clients struct {
+    Active  []string `json:"active"`
+    Primary string   `json:"primary"`
+}
+
+type DiscordUser struct {
+    ID                  string            `json:"id"`
+    Username            string            `json:"username"`
+    GlobalName          string            `json:"global_name"`
+    DisplayName         string            `json:"display_name"`
+    Avatar              string            `json:"avatar"`
+    AvatarURL           string            `json:"avatar_url"`
+    Discriminator       string            `json:"discriminator"`
+    Bot                 bool              `json:"bot"`
+    PublicFlags         int               `json:"public_flags"`
+    AvatarDecoration    *AvatarDecoration `json:"avatar_decoration_data,omitempty"`
+    PrimaryGuild        *PrimaryGuild     `json:"primary_guild,omitempty"`
+}
+
+type Spotify struct {
+    TrackID    string     `json:"track_id,omitempty"`
+    PartyID    string     `json:"party_id,omitempty"`
+    Timestamps *Timestamps `json:"timestamps,omitempty"`
+    Song       string     `json:"song,omitempty"`
+    Artist     string     `json:"artist,omitempty"`
+    AlbumArt   string     `json:"album_art_url,omitempty"`
+    Album      string     `json:"album,omitempty"`
+}
+
+type Emoji struct {
+    Name string `json:"name"`
+}
+
+type Assets struct {
+    LargeImage      string `json:"large_image"`
+    LargeImageURL   string `json:"large_image_url"`
+    LargeText       string `json:"large_text"`
+    SmallImage      string `json:"small_image"`
+    SmallImageURL   string `json:"small_image_url"`
+    SmallText       string `json:"small_text"`
+}
+
+type Timestamps struct {
+    Start int64 `json:"start"`
+    End   int64 `json:"end"`
+}
+
+type AvatarDecoration struct {
+    Asset              string `json:"asset"`
+    AvatarDecorationURL string `json:"avatar_decoration_url"`
+    ExpiresAt          string `json:"expires_at"`
+    SkuID              string `json:"sku_id"`
+}
+
+type PrimaryGuild struct {
+    Badge            string `json:"badge"`
+    BadgeURL         string `json:"badge_url"`
+    IdentityEnabled  bool   `json:"identity_enabled"`
+    IdentityGuildID  string `json:"identity_guild_id"`
+    Tag              string `json:"tag"`
+}
+```  
+</Tab>
 </Tabs>
 
 ### DiscordUser
@@ -164,6 +266,7 @@ Represents Spotify listening information.
 | Field          | Type              | Description                                                                 |
 |----------------|-------------------|-----------------------------------------------------------------------------|
 | `track_id`     | string, optional  | The unique identifier for the track.                                       |
+| `party_id`     | string, optional  | The Spotify party ID associated with the listening session.                |
 | `timestamps`   | object, optional  | The start and end times for the track. **Notes**: Timestamps are in milliseconds since the Unix epoch. |
 | `song`         | string, optional  | The name of the song.                                                      |
 | `artist`       | string, optional  | The name of the artist.                                                    |
@@ -176,6 +279,7 @@ Represents Spotify listening information.
 ```json
 {
   "track_id": "example_track_id",
+  "party_id": "example_party_id",
   "timestamps": {
     "start": 1672531200000,
     "end": 1672534800000
@@ -193,6 +297,7 @@ Represents Spotify listening information.
 ```go
 type Spotify struct {
     TrackID    string     `json:"track_id,omitempty"`
+    PartyID    string     `json:"party_id,omitempty"`
     Timestamps Timestamps `json:"timestamps,omitempty"`
     Song       string     `json:"song,omitempty"`
     Artist     string     `json:"artist,omitempty"`
@@ -203,3 +308,7 @@ type Spotify struct {
 
   </Tab>
 </Tabs>
+
+<Callout title="Note" type="warn">
+For those familiar with Discord's raw activity payloads, the `sync_id` field has been omitted in favor of `track_id` for simplicity.
+</Callout>

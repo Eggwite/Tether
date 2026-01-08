@@ -12,6 +12,7 @@ func buildSpotify(act *discordgo.Activity, raw map[string]any) *store.Spotify {
 	start, end := utils.ExtractTimestamps(raw)
 
 	trackID := utils.GetSpotifyTrackID(raw)
+	partyID := utils.GetSpotifyPartyID(raw)
 
 	albumArt := ""
 	if assets, ok := raw["assets"].(map[string]any); ok {
@@ -27,6 +28,7 @@ func buildSpotify(act *discordgo.Activity, raw map[string]any) *store.Spotify {
 
 	return &store.Spotify{
 		TrackID:    trackID,
+		PartyID:    partyID,
 		Timestamps: store.Timestamps{Start: start, End: end},
 		Song:       utils.FirstNonEmpty(act.Details, utils.GetString(raw["details"])),
 		Artist:     utils.FirstNonEmpty(act.State, utils.GetString(raw["state"])),
@@ -52,6 +54,7 @@ func patchSpotifyFromRaw(prev store.PresenceData, rawActivities []any) store.Pre
 		if trackID == "" {
 			continue
 		}
+		partyID := utils.GetSpotifyPartyID(act)
 
 		// Extract timestamps (these change continuously during playback)
 		start, end := utils.ExtractTimestamps(act)
@@ -75,6 +78,9 @@ func patchSpotifyFromRaw(prev store.PresenceData, rawActivities []any) store.Pre
 		// Update all fields to reflect current playback state
 		prev.Spotify.TrackID = trackID
 		prev.Spotify.Timestamps = store.Timestamps{Start: start, End: end}
+		if partyID != "" {
+			prev.Spotify.PartyID = partyID
+		}
 		if song != "" {
 			prev.Spotify.Song = song
 		}
@@ -88,13 +94,6 @@ func patchSpotifyFromRaw(prev store.PresenceData, rawActivities []any) store.Pre
 			prev.Spotify.Album = album
 		}
 
-		// Also update sync_id in Activities list (thanks discordgo >:[)
-		for i, a := range prev.Activities {
-			if utils.IsSpotifyActivity(a) {
-				prev.Activities[i]["sync_id"] = trackID
-				// prev.Activities[i]["track_id"] = trackID --- to maintain parity with Lanyard (because of course)
-			}
-		}
 		return prev
 	}
 

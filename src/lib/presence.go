@@ -67,7 +67,6 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 
 	presence = patchActivitiesFromRaw(presence, rawActivities)
 	presence = patchSpotifyFromRaw(presence, rawActivities)
-	presence.ListeningToSpotify = presence.Spotify != nil || hasSpotifyActivity(rawActivities)
 
 	user = pickUserMap(user, member)
 	if user == nil || member == nil {
@@ -87,7 +86,6 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 }
 
 // hasSpotifyActivity checks whether any activity is Spotify so we can mark
-// listening_to_spotify even if the Spotify object was not built.
 func hasSpotifyActivity(rawActivities []any) bool {
 	for _, item := range rawActivities {
 		if act, ok := item.(map[string]any); ok && utils.IsSpotifyActivity(act) {

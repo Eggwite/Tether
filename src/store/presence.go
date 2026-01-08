@@ -17,9 +17,9 @@ type Timestamps struct {
 // new Discord fields flow through untouched.
 type Activity map[string]any
 
-// Spotify mirrors the Lanyard spotify payload when listening_to_spotify is true.
 type Spotify struct {
 	TrackID    string     `json:"track_id,omitempty"`
+	PartyID    string     `json:"party_id,omitempty"`
 	Timestamps Timestamps `json:"timestamps,omitempty"`
 	Song       string     `json:"song,omitempty"`
 	Artist     string     `json:"artist,omitempty"`
@@ -54,7 +54,6 @@ type PresenceData struct {
 	// Derived convenience fields summarizing active clients.
 	ActiveClients         []string    `json:"active_clients,omitempty"`
 	PrimaryActiveClient   string      `json:"primary_active_client,omitempty"`
-	ListeningToSpotify    bool        `json:"listening_to_spotify"`
 	Spotify               *Spotify    `json:"spotify"`
 	DiscordUser           DiscordUser `json:"discord_user"`
 	DiscordStatus         string      `json:"discord_status"`

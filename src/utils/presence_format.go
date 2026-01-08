@@ -18,15 +18,20 @@ func PublicPresenceFromStore(p store.PresenceData) map[string]any {
 	}
 	out["clients"] = clients
 
-	// activities and spotify pass-through
-	out["activities"] = p.Activities
+	// activities pass-through, but strip the raw Spotify activity to avoid
+	// duplicating data already present in the top-level `spotify` object.
+	filtered := make([]store.Activity, 0, len(p.Activities))
+	for _, a := range p.Activities {
+		if IsSpotifyActivity(map[string]any(a)) {
+			continue
+		}
+		filtered = append(filtered, a)
+	}
+	out["activities"] = filtered
 	out["spotify"] = p.Spotify
 
-	// preserve discord_user under the same key for now
+	// preserve discord_user under the same key
 	out["discord_user"] = p.DiscordUser
-
-	// keep listening flag and suggested user if present
-	out["listening_to_spotify"] = p.ListeningToSpotify
 
 	return out
 }

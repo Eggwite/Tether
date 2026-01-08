@@ -15,6 +15,7 @@ import (
 	"tether/src/store"
 	"tether/src/utils"
 	"tether/src/utils/response"
+	"tether/src/version"
 	ws "tether/src/websocket"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +26,8 @@ func main() {
 	// Load .env file if it exists (non-fatal if missing).
 	_ = godotenv.Load()
 	logging.Configure()
+
+	logging.Log.Infof("Starting Tether %s", version.Version)
 
 	port := getenv("PORT", "8080")
 	st := store.NewPresenceStore()

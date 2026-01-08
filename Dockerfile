@@ -8,7 +8,8 @@ RUN go mod download
 
 # Copy the rest of the source and build the server.
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/tether ./cmd
+ARG VERSION=dev
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X tether/src/version.Version=${VERSION}" -o /bin/tether ./cmd
 
 # Minimal runtime image.
 FROM gcr.io/distroless/base-debian12

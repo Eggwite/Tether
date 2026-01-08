@@ -5,7 +5,6 @@ import (
 	"tether/src/concurrency"
 )
 
-// Timestamps mirrors Lanyard's timestamp shape.
 type Timestamps struct {
 	Start     int64 `json:"start,omitempty"`
 	End       int64 `json:"end,omitempty"`
@@ -27,7 +26,7 @@ type Spotify struct {
 	Album      string     `json:"album,omitempty"`
 }
 
-// DiscordUser contains the minimal public Discord user fields Lanyard relays.
+// DiscordUser contains the minimal public Discord user fields Tether relays.
 type DiscordUser struct {
 	ID                   string `json:"id,omitempty"`
 	Username             string `json:"username,omitempty"`
@@ -44,7 +43,6 @@ type DiscordUser struct {
 	PublicFlags          int    `json:"public_flags"`
 }
 
-// PresenceData is the top-level payload compatible with Lanyard's REST/WS shape.
 type PresenceData struct {
 	// Internal booleans: kept for construction but omitted from public JSON
 	ActiveOnDiscordMobile   bool `json:"-"`
@@ -61,16 +59,12 @@ type PresenceData struct {
 	SuggestedUserIfExists *string     `json:"suggested_user_if_exists,omitempty"`
 }
 
-// PrettyPresence binds a user ID to their current Lanyard-compatible snapshot.
-// This mirrors what Lanyard caches in ETS so we can store or fan out updates in
-// a single, typed value without changing the external JSON hierarchy.
 type PrettyPresence struct {
 	UserID   string       `json:"user_id"`
 	Presence PresenceData `json:"data"`
 }
 
 // PublicFields is the public envelope shape used by REST and WebSocket replies
-// (success flag plus optional data or error), matching Lanyard's public API.
 type PublicFields struct {
 	Success bool `json:"success"`
 	Data    any  `json:"data,omitempty"`
@@ -96,7 +90,7 @@ type Replicator interface {
 //   store.AddReplicator(RedisReplicator{client})
 
 // PresenceStore keeps the latest presence snapshot in-memory (RWMutex-backed
-// map, akin to Lanyard's ETS) and fans out events to subscribers and optional
+// map) and fans out events to subscribers and optional
 // cross-node replicators. All public methods are concurrency-safe.
 type PresenceStore struct {
 	mu            sync.RWMutex
@@ -214,7 +208,7 @@ func (s *PresenceStore) BroadcastPresence(userID string) {
 	s.broadcast(PresenceEvent{UserID: userID, Presence: data})
 }
 
-// PrettySnapshot returns the combined user ID + presence shape Lanyard exposes.
+// PrettySnapshot returns the combined user ID + presence shape Tether exposes.
 func (s *PresenceStore) PrettySnapshot(userID string) (PrettyPresence, bool) {
 	p, ok := s.GetPresence(userID)
 	if !ok {

@@ -6,23 +6,8 @@ import (
 	"strings"
 )
 
-// File Overview:
-// 1. DISCORDGO FIELD OMISSIONS: The discordgo library doesn't include all fields
-//    that Discord's Gateway sends, especially:
-//    - sync_id/track_id for Spotify activities (critical for tracking songs)
-//    - session_id in activities (for identifying specific activity sessions)
-//    - New identity fields: primary_guild, collectibles, avatar_decoration_data
-//
-// 2. GATEWAY EVENT INCONSISTENCIES: Discord sends different field subsets in different events:
-//    - PRESENCE_UPDATE: Has activities but may omit some user identity fields
-//    - GUILD_MEMBER_UPDATE: Has full user identity but no activities
-//    - GUILD_MEMBERS_CHUNK: Batches both presences and members with varying fields
-//
-// 3. SPOTIFY TRACKING: Spotify integration requires sync_id (track ID) which discordgo
-//    doesn't expose through its Activity struct.
-
 // Discord sends Spotify album art as "spotify:abc123hash" which must be
-// transformed to "https://i.scdn.co/image/abc123hash" for display (Lanyard also does this.)
+// transformed to "https://i.scdn.co/image/abc123hash" for display.
 // Non-Spotify assets are returned unchanged.
 func FormatSpotifyAlbumArt(assetID string) string {
 	if after, ok := strings.CutPrefix(assetID, "spotify:"); ok {

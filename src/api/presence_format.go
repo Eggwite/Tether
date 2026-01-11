@@ -1,4 +1,4 @@
-package utils
+package api
 
 import "tether/src/store"
 
@@ -22,7 +22,7 @@ func PublicPresenceFromStore(p store.PresenceData) map[string]any {
 	// duplicating data already present in the top-level `spotify` object.
 	filtered := make([]store.Activity, 0, len(p.Activities))
 	for _, a := range p.Activities {
-		if IsSpotifyActivity(map[string]any(a)) {
+		if isSpotifyActivity(map[string]any(a)) {
 			continue
 		}
 		filtered = append(filtered, a)
@@ -34,4 +34,11 @@ func PublicPresenceFromStore(p store.PresenceData) map[string]any {
 	out["discord_user"] = p.DiscordUser
 
 	return out
+}
+
+// isSpotifyActivity checks for Spotify activities using type or name.
+func isSpotifyActivity(act map[string]any) bool {
+	actType, _ := act["type"].(float64)
+	actName, _ := act["name"].(string)
+	return int(actType) == 2 || actName == "Spotify"
 }

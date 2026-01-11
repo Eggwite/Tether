@@ -57,8 +57,8 @@ type connState struct {
 	subs          map[string]struct{}
 	lastHeartbeat time.Time
 	misses        int
-	mu            sync.Mutex // protects lastHeartbeat and misses
-	writeMu       sync.Mutex // serializes writes to the websocket.Conn
+	mu            sync.Mutex
+	writeMu       sync.Mutex
 	seq           int64
 }
 
@@ -345,8 +345,6 @@ func (s *Server) Close() {
 	s.state = make(map[*websocket.Conn]*connState)
 	s.stateMu.Unlock()
 }
-
-// nextSeq removed: sequence numbering is now per-connection on connState.seq
 
 func (s *Server) sendError(conn *websocket.Conn, code string, message string, status int, retryable bool, details any) {
 	errorMessage := wsMessage{

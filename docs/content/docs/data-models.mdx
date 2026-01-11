@@ -51,7 +51,7 @@ Represents the current presence state of a Discord user.
         "small_text": "Visual Studio Code"
       },
       "created_at": 1767862080472,
-      "details": "Editing temp_current.json",
+      "details": "Editing hello_world.json",
       "id": "4dc2afc1b4e8c182",
       "name": "Visual Studio Code",
       "platform": "desktop",
@@ -73,10 +73,8 @@ Represents the current presence state of a Discord user.
     "id": "672569780716175370",
     "username": "eggwite",
     "global_name": "𝐸𝑔𝑔𝓌𝑜𝓊𝓁𝒹𝓃'𝓉",
-    "display_name": "𝐸𝑔𝑔𝓌𝑜𝓊𝓁𝒹𝓃'𝓉",
     "avatar": "e4b9454871f5c161bcbdc9640ef8ce53",
     "avatar_url": "https://cdn.discordapp.com/avatars/672569780716175370/e4b9454871f5c161bcbdc9640ef8ce53.webp?size=256",
-    "discriminator": "0",
     "avatar_decoration_data": {
       "asset": "a_c3cffc19e9784f7d0b005eecdf1b566e",
       "avatar_decoration_url": "https://cdn.discordapp.com/avatar-decoration-presets/a_c3cffc19e9784f7d0b005eecdf1b566e.png?size=240&passthrough=true",
@@ -92,7 +90,6 @@ Represents the current presence state of a Discord user.
     },
     "collectibles": null,
     "display_name_styles": null,
-    "bot": false,
     "public_flags": 64
   },
   "spotify": {
@@ -146,11 +143,8 @@ type DiscordUser struct {
     ID                  string            `json:"id"`
     Username            string            `json:"username"`
     GlobalName          string            `json:"global_name"`
-    DisplayName         string            `json:"display_name"`
     Avatar              string            `json:"avatar"`
     AvatarURL           string            `json:"avatar_url"`
-    Discriminator       string            `json:"discriminator"`
-    Bot                 bool              `json:"bot"`
     PublicFlags         int               `json:"public_flags"`
     AvatarDecoration    *AvatarDecoration `json:"avatar_decoration_data,omitempty"`
     PrimaryGuild        *PrimaryGuild     `json:"primary_guild,omitempty"`
@@ -213,11 +207,9 @@ Represents basic Discord user identity information.
 | `id`           | string, optional  | The unique identifier for the user.                                        |
 | `username`     | string, optional  | The user’s username.                                                       |
 | `global_name`  | string, optional  | The user’s global display name.                                            |
-| `display_name` | string, optional  | The user’s display name.                                                   |
 | `avatar`       | string, optional  | The user’s avatar hash.                                                    |
 | `avatar_url`   | string, optional  | The URL to the user’s avatar image.                                        |
-| `discriminator`| string, optional  | The user’s discriminator (e.g., `1234`).                                   |
-| `bot`          | boolean           | Whether the user is a bot.                                                 |
+| `display_name_styles` | any, optional | Optional display name styling metadata. |
 | `public_flags` | integer           | Public flags associated with the user.                                     |
 
 <Tabs items={["JSON", "Go"]}>
@@ -228,11 +220,8 @@ Represents basic Discord user identity information.
   "id": "example_user_id",
   "username": "example_user",
   "global_name": "Example User",
-  "display_name": "Example",
   "avatar": "example_avatar_hash",
   "avatar_url": "https://example.com/avatar.jpg",
-  "discriminator": "1234",
-  "bot": false,
   "public_flags": 64
 }
 ```
@@ -245,11 +234,8 @@ type DiscordUser struct {
     ID            string `json:"id,omitempty"`
     Username      string `json:"username,omitempty"`
     GlobalName    string `json:"global_name,omitempty"`
-    DisplayName   string `json:"display_name,omitempty"`
     Avatar        string `json:"avatar,omitempty"`
     AvatarURL     string `json:"avatar_url,omitempty"`
-    Discriminator string `json:"discriminator,omitempty"`
-    Bot           bool   `json:"bot"`
     PublicFlags   int    `json:"public_flags"`
 }
 ```

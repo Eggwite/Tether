@@ -123,10 +123,7 @@ func hasIdentityFields(user map[string]any) bool {
 	if user == nil {
 		return false
 	}
-	if utils.GetString(user["username"]) != "" || utils.GetString(user["avatar"]) != "" || utils.GetString(user["global_name"]) != "" || utils.GetString(user["display_name"]) != "" {
-		return true
-	}
-	if utils.GetString(user["discriminator"]) != "" {
+	if utils.GetString(user["username"]) != "" || utils.GetString(user["avatar"]) != "" || utils.GetString(user["global_name"]) != "" {
 		return true
 	}
 	if utils.ExtractIntField(user, "public_flags") != 0 {

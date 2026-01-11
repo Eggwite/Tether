@@ -24,25 +24,15 @@ func buildDiscordUser(u *discordgo.User) store.DiscordUser {
 	}).Debug("Building Discord user from discordgo.User")
 
 	du := store.DiscordUser{
-		ID:            u.ID,
-		Username:      u.Username,
-		Discriminator: u.Discriminator,
-		Avatar:        u.Avatar,
-		Bot:           u.Bot,
-		PublicFlags:   int(u.PublicFlags),
-		GlobalName:    u.GlobalName,
+		ID:          u.ID,
+		Username:    u.Username,
+		Avatar:      u.Avatar,
+		PublicFlags: int(u.PublicFlags),
+		GlobalName:  u.GlobalName,
 	}
 
-	// Generate avatar URL
-	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, du.Discriminator)
-
-	if du.DisplayName == "" {
-		du.DisplayName = utils.FirstNonEmpty(du.GlobalName, du.Username)
-		logging.Log.WithFields(logrus.Fields{
-			"user_id":      du.ID,
-			"display_name": du.DisplayName,
-		}).Debug("Set display name from global name or username")
-	}
+	// Generate avatar URL (discriminator not used anymore)
+	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, "")
 
 	return du
 }
@@ -57,23 +47,15 @@ func MergeDiscordUser(base store.DiscordUser, incoming store.DiscordUser) store.
 	base.ID = utils.MergeStringField(base.ID, incoming.ID)
 	base.Username = utils.MergeStringField(base.Username, incoming.Username)
 	base.GlobalName = utils.MergeStringField(base.GlobalName, incoming.GlobalName)
-	base.DisplayName = utils.MergeStringField(base.DisplayName, incoming.DisplayName)
 	base.Avatar = utils.MergeStringField(base.Avatar, incoming.Avatar)
-	base.Discriminator = utils.MergeStringField(base.Discriminator, incoming.Discriminator)
 	base.AvatarDecorationData = utils.MergeAnyField(base.AvatarDecorationData, incoming.AvatarDecorationData)
 	base.PrimaryGuild = utils.MergeAnyField(base.PrimaryGuild, incoming.PrimaryGuild)
 	base.Collectibles = utils.MergeAnyField(base.Collectibles, incoming.Collectibles)
 	base.DisplayNameStyles = utils.MergeAnyField(base.DisplayNameStyles, incoming.DisplayNameStyles)
-
-	base.Bot = incoming.Bot || base.Bot
 	base.PublicFlags = utils.MergeIntField(base.PublicFlags, incoming.PublicFlags)
 
-	if base.DisplayName == "" {
-		base.DisplayName = utils.FirstNonEmpty(base.GlobalName, base.Username)
-	}
-
-	// Regenerate avatar URL after merging avatar/discriminator fields
-	base.AvatarURL = utils.BuildAvatarURL(base.ID, base.Avatar, base.Discriminator)
+	// Regenerate avatar URL after merging avatar fields
+	base.AvatarURL = utils.BuildAvatarURL(base.ID, base.Avatar, "")
 
 	return base
 }
@@ -109,8 +91,8 @@ func mergeRawUserFromMaps(st *store.PresenceStore, userMap, memberMap map[string
 	})
 
 	logging.Log.WithFields(logrus.Fields{
-		"user_id":      userID,
-		"display_name": du.DisplayName,
+		"user_id":  userID,
+		"username": du.Username,
 	}).Info("Raw user data merged successfully")
 }
 
@@ -163,10 +145,7 @@ func discordUserFromRaw(user map[string]any, member map[string]any) store.Discor
 		ID:                   userID,
 		Username:             utils.GetString(user["username"]),
 		GlobalName:           utils.GetString(user["global_name"]),
-		DisplayName:          utils.GetString(user["display_name"]),
 		Avatar:               utils.GetString(user["avatar"]),
-		Discriminator:        utils.GetString(user["discriminator"]),
-		Bot:                  utils.ExtractBoolField(user, "bot"),
 		PublicFlags:          utils.ExtractIntField(user, "public_flags"),
 		AvatarDecorationData: utils.EnrichAvatarDecorationData(user["avatar_decoration_data"]),
 		PrimaryGuild:         utils.EnrichPrimaryGuildData(user["primary_guild"]),
@@ -177,9 +156,6 @@ func discordUserFromRaw(user map[string]any, member map[string]any) store.Discor
 	// Member-level overrides
 	if member != nil {
 		logging.Log.WithField("user_id", userID).Debug("Applying member-level overrides")
-		if v := utils.GetString(member["display_name"]); v != "" {
-			du.DisplayName = v
-		}
 		// Check for member-level avatar override
 		if memberAvatar := utils.GetString(member["avatar"]); memberAvatar != "" {
 			du.Avatar = memberAvatar
@@ -191,7 +167,7 @@ func discordUserFromRaw(user map[string]any, member map[string]any) store.Discor
 	}
 
 	// Generate avatar URL after all overrides are applied
-	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, du.Discriminator)
+	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, "")
 
 	return du
 }

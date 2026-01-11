@@ -48,15 +48,12 @@ type DiscordUser struct {
 	ID                   string `json:"id,omitempty"`
 	Username             string `json:"username,omitempty"`
 	GlobalName           string `json:"global_name,omitempty"`
-	DisplayName          string `json:"display_name,omitempty"`
 	Avatar               string `json:"avatar,omitempty"`
 	AvatarURL            string `json:"avatar_url,omitempty"`
-	Discriminator        string `json:"discriminator,omitempty"`
 	AvatarDecorationData any    `json:"avatar_decoration_data"`
 	PrimaryGuild         any    `json:"primary_guild"`
 	Collectibles         any    `json:"collectibles"`
 	DisplayNameStyles    any    `json:"display_name_styles"`
-	Bot                  bool   `json:"bot"`
 	PublicFlags          int    `json:"public_flags"`
 }
 
@@ -139,16 +136,11 @@ type PresenceEvent struct {
 	Removed  bool
 }
 
-// Replicator can optionally fan out presence mutations (e.g., Redis pub/sub)
+// Replicator can optionally fan out presence mutations (e.g., via pub/sub)
 // to keep multiple nodes in sync. It is best-effort and non-blocking.
 type Replicator interface {
 	Publish(evt PresenceEvent) error
 }
-
-// Example Redis wiring (pseudo-code):
-//   type RedisReplicator struct { client *redis.Client }
-//   func (r RedisReplicator) Publish(evt PresenceEvent) error { return r.client.Publish(ctx, "presence", evt).Err() }
-//   store.AddReplicator(RedisReplicator{client})
 
 // PresenceStore keeps the latest presence snapshot in-memory (RWMutex-backed
 // map) and fans out events to subscribers and optional
@@ -188,7 +180,7 @@ func (s *PresenceStore) Subscribe() (int, <-chan PresenceEvent, func()) {
 	return id, ch, cancel
 }
 
-// AddReplicator registers a best-effort publisher (e.g., Redis) for multi-node
+// AddReplicator registers a best-effort publisher for multi-node
 // fanout. Calls are made asynchronously during broadcast to avoid blocking the
 // in-memory hot path.
 func (s *PresenceStore) AddReplicator(r Replicator) {

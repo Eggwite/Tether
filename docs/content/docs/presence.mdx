@@ -67,8 +67,6 @@ When subscribed to user IDs via the WebSocket gateway, presence updates will inc
 
 The diagram represents the relational structure of the typical response presence object returned by the Tether API. More details on the specific fields and properties can be found at [Presence Data Model](./data-models#presence-data-model).
 
-<Tabs items={["Diagram", "Example"]}>
-  <Tab>
     <Mermaid chart={`
       classDiagram
         class Presence {
@@ -99,11 +97,8 @@ The diagram represents the relational structure of the typical response presence
           id: string
           username: string
           global_name: string
-          display_name: string
           avatar: string
           avatar_url: string
-          discriminator: string
-          bot: bool
           public_flags: int
           avatar_decoration_data: AvatarDecoration
           primary_guild: PrimaryGuild
@@ -156,97 +151,7 @@ The diagram represents the relational structure of the typical response presence
         DiscordUser o-- AvatarDecoration
         DiscordUser o-- PrimaryGuild
     `} style="overflow: visible;" />
-  </Tab>
-  <Tab>
-  ```json title="response.json"
-  {
-    "data": {
-        "activities": [
-            {
-                "created_at": 1767862082571,
-                "emoji": {
-                    "name": "🍰"
-                },
-                "id": "custom",
-                "name": "Custom Status",
-                "session_id": "b2688c7311af71cac3f5b564df161e8c",
-                "state": "Startorch academy scholar",
-                "type": 4
-            },
-            {
-                "application_id": "383226320970055681",
-                "assets": {
-                    "large_image": "1359299015484768338",
-                    "large_image_url": "https://cdn.discordapp.com/app-assets/383226320970055681/1359299015484768338.webp",
-                    "large_text": "Editing a JSON file",
-                    "small_image": "1359299466493956258",
-                    "small_image_url": "https://cdn.discordapp.com/app-assets/383226320970055681/1359299466493956258.webp",
-                    "small_text": "Visual Studio Code"
-                },
-                "created_at": 1767862080472,
-                "details": "Editing temp_current.json",
-                "id": "4dc2afc1b4e8c182",
-                "name": "Visual Studio Code",
-                "platform": "desktop",
-                "session_id": "b2688c7311af71cac3f5b564df161e8c",
-                "state": "Workspace: ​​",
-                "timestamps": {
-                    "start": 1767859918293
-                },
-                "type": 0
-            }
-        ],
-        "clients": {
-            "active": [
-                "desktop"
-            ],
-            "primary": "desktop"
-        },
-        "discord_user": {
-            "id": "672569780716175370",
-            "username": "eggwite",
-            "global_name": "𝐸𝑔𝑔𝓌𝑜𝓊𝓁𝒹𝓃'𝓉",
-            "display_name": "𝐸𝑔𝑔𝓌𝑜𝓊𝓁𝒹𝓃'𝓉",
-            "avatar": "e4b9454871f5c161bcbdc9640ef8ce53",
-            "avatar_url": "https://cdn.discordapp.com/avatars/672569780716175370/e4b9454871f5c161bcbdc9640ef8ce53.webp?size=256",
-            "discriminator": "0",
-            "avatar_decoration_data": {
-                "asset": "a_c3cffc19e9784f7d0b005eecdf1b566e",
-                "avatar_decoration_url": "https://cdn.discordapp.com/avatar-decoration-presets/a_c3cffc19e9784f7d0b005eecdf1b566e.png?size=240&passthrough=true",
-                "expires_at": null,
-                "sku_id": "1212569433839636530"
-            },
-            "primary_guild": {
-                "badge": "1ed9dbd4ad1c8ba83484f6767f8c4afd",
-                "badge_url": "https://cdn.discordapp.com/clan-badges/778820142138261505/1ed9dbd4ad1c8ba83484f6767f8c4afd.png?size=32",
-                "identity_enabled": true,
-                "identity_guild_id": "778820142138261505",
-                "tag": "˚+"
-            },
-            "collectibles": null,
-            "display_name_styles": null,
-            "bot": false,
-            "public_flags": 64
-        },
-        "spotify": {
-            "track_id": "32zpHDchUY83w80C8mMtOs",
-            "party_id": "spotify:672569780716175370",
-            "timestamps": {
-                "start": 1767862010530,
-                "end": 1767862152412
-            },
-            "song": "QUEEN",
-            "artist": "Kanaria",
-            "album_art_url": "https://i.scdn.co/image/ab67616d0000b273dd18a7c8679c1c78f1f12e2d",
-            "album": "QUEEN"
-        },
-        "status": "online"
-    },
-    "success": true
-  }
-  ```
-  </Tab>
-</Tabs>
+
 
 <Callout title="Notes on Presence Data" type="idea">
 | Field/Property | Description |

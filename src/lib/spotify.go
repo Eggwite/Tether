@@ -14,26 +14,39 @@ func buildSpotify(act *discordgo.Activity, raw map[string]any) *store.Spotify {
 	trackID := utils.GetSpotifyTrackID(raw)
 	partyID := utils.GetSpotifyPartyID(raw)
 
-	albumArt := ""
+	var albumArtStr string
 	if assets, ok := raw["assets"].(map[string]any); ok {
 		if img := utils.GetString(assets["large_image"]); img != "" {
-			albumArt = utils.FormatSpotifyAlbumArt(img)
+			albumArtStr = utils.FormatSpotifyAlbumArt(img)
 		}
 	}
 
-	album := ""
+	var albumStr string
 	if assets, ok := raw["assets"].(map[string]any); ok {
-		album = utils.GetString(assets["large_text"])
+		albumStr = utils.GetString(assets["large_text"])
+	}
+
+	// helper converters to produce *string / *int64 values and allow nulls (incase of empty)
+	strPtr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+
+	var ts *store.Timestamps
+	if start != 0 || end != 0 {
+		ts = &store.Timestamps{Start: start, End: end}
 	}
 
 	return &store.Spotify{
-		TrackID:    trackID,
-		PartyID:    partyID,
-		Timestamps: store.Timestamps{Start: start, End: end},
-		Song:       utils.FirstNonEmpty(act.Details, utils.GetString(raw["details"])),
-		Artist:     utils.FirstNonEmpty(act.State, utils.GetString(raw["state"])),
-		AlbumArt:   albumArt,
-		Album:      album,
+		TrackID:    strPtr(trackID),
+		PartyID:    strPtr(partyID),
+		Timestamps: ts,
+		Song:       strPtr(utils.FirstNonEmpty(act.Details, utils.GetString(raw["details"]))),
+		Artist:     strPtr(utils.FirstNonEmpty(act.State, utils.GetString(raw["state"]))),
+		AlbumArt:   strPtr(albumArtStr),
+		Album:      strPtr(albumStr),
 	}
 }
 
@@ -75,23 +88,41 @@ func patchSpotifyFromRaw(prev store.PresenceData, rawActivities []any) store.Pre
 			prev.Spotify = &store.Spotify{}
 		}
 
+		// helper converters
+		strPtr := func(s string) *string {
+			if s == "" {
+				return nil
+			}
+			return &s
+		}
+
 		// Update all fields to reflect current playback state
-		prev.Spotify.TrackID = trackID
-		prev.Spotify.Timestamps = store.Timestamps{Start: start, End: end}
+		prev.Spotify.TrackID = strPtr(trackID)
+		prev.Spotify.Timestamps = &store.Timestamps{Start: start, End: end}
 		if partyID != "" {
-			prev.Spotify.PartyID = partyID
+			prev.Spotify.PartyID = strPtr(partyID)
+		} else {
+			prev.Spotify.PartyID = nil
 		}
 		if song != "" {
-			prev.Spotify.Song = song
+			prev.Spotify.Song = strPtr(song)
+		} else {
+			prev.Spotify.Song = nil
 		}
 		if artist != "" {
-			prev.Spotify.Artist = artist
+			prev.Spotify.Artist = strPtr(artist)
+		} else {
+			prev.Spotify.Artist = nil
 		}
 		if albumArt != "" {
-			prev.Spotify.AlbumArt = albumArt
+			prev.Spotify.AlbumArt = strPtr(albumArt)
+		} else {
+			prev.Spotify.AlbumArt = nil
 		}
 		if album != "" {
-			prev.Spotify.Album = album
+			prev.Spotify.Album = strPtr(album)
+		} else {
+			prev.Spotify.Album = nil
 		}
 
 		return prev

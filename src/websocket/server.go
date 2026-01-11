@@ -48,9 +48,9 @@ type initPayload struct {
 }
 
 type presenceEnvelope struct {
-	UserID  string              `json:"user_id"`
-	Data    *store.PresenceData `json:"data,omitempty"`
-	Removed bool                `json:"removed,omitempty"`
+	UserID  string                `json:"user_id"`
+	Data    *store.PublicPresence `json:"data,omitempty"`
+	Removed bool                  `json:"removed,omitempty"`
 }
 
 type connState struct {
@@ -183,7 +183,8 @@ func (s *Server) handleInit(conn *websocket.Conn, raw any) {
 	s.stateMu.Unlock()
 	for userID := range state.subs {
 		if presence, ok := s.store.GetPresence(userID); ok {
-			s.sendEvent(conn, "INIT_STATE", presenceEnvelope{UserID: userID, Data: &presence})
+			public := presence.Public
+			s.sendEvent(conn, "INIT_STATE", presenceEnvelope{UserID: userID, Data: &public})
 		}
 	}
 }
@@ -306,7 +307,8 @@ func (s *Server) broadcast(evt store.PresenceEvent) {
 	if evt.Removed {
 		payload = presenceEnvelope{UserID: evt.UserID, Removed: true}
 	} else {
-		payload = presenceEnvelope{UserID: evt.UserID, Data: &evt.Presence}
+		public := evt.Presence.Public
+		payload = presenceEnvelope{UserID: evt.UserID, Data: &public}
 	}
 
 	for _, conn := range targets {

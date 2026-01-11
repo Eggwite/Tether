@@ -246,21 +246,3 @@ func ExtractRawIdentityFromPayload(payload map[string]any) (user, member map[str
 	}
 	return userVal, memberMap
 }
-
-// ExtractActiveClients converts raw active_clients to []string.
-func ExtractActiveClients(raw any) []string {
-	if raw == nil {
-		return nil
-	}
-	clients, ok := raw.([]any)
-	if !ok {
-		return nil
-	}
-	result := make([]string, 0, len(clients))
-	for _, client := range clients {
-		if clientStr := GetString(client); clientStr != "" {
-			result = append(result, clientStr)
-		}
-	}
-	return result
-}

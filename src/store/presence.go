@@ -17,13 +17,30 @@ type Timestamps struct {
 type Activity map[string]any
 
 type Spotify struct {
-	TrackID    string     `json:"track_id,omitempty"`
-	PartyID    string     `json:"party_id,omitempty"`
-	Timestamps Timestamps `json:"timestamps,omitempty"`
-	Song       string     `json:"song,omitempty"`
-	Artist     string     `json:"artist,omitempty"`
-	AlbumArt   string     `json:"album_art_url,omitempty"`
-	Album      string     `json:"album,omitempty"`
+	TrackID    *string     `json:"track_id"`
+	PartyID    *string     `json:"party_id"`
+	Timestamps *Timestamps `json:"timestamps"`
+	Song       *string     `json:"song"`
+	Artist     *string     `json:"artist"`
+	AlbumArt   *string     `json:"album_art_url"`
+	Album      *string     `json:"album"`
+}
+
+// PublicClients is the public, stable clients grouping used by REST and WS.
+// It matches the documented API schema.
+type PublicClients struct {
+	Active  []string `json:"active"`
+	Primary string   `json:"primary"`
+}
+
+// PublicPresence is the public, stable presence snapshot returned by REST and WS.
+// It is precomputed at write-time (gateway events) to keep read paths cheap.
+type PublicPresence struct {
+	Status      string        `json:"status"`
+	Activities  []Activity    `json:"activities"`
+	Clients     PublicClients `json:"clients"`
+	DiscordUser DiscordUser   `json:"discord_user"`
+	Spotify     *Spotify      `json:"spotify"`
 }
 
 // DiscordUser contains the minimal public Discord user fields Tether relays.
@@ -57,6 +74,50 @@ type PresenceData struct {
 	DiscordStatus         string      `json:"discord_status"`
 	Activities            []Activity  `json:"activities"`
 	SuggestedUserIfExists *string     `json:"suggested_user_if_exists,omitempty"`
+	// Public is the precomputed public-facing snapshot used by REST and WS.
+	// It is intentionally omitted from JSON when PresenceData is marshaled.
+	Public PublicPresence `json:"-"`
+}
+
+func isSpotifyActivity(act map[string]any) bool {
+	// Spotify is typically activity type 2, but some payloads rely on name.
+	// This mirrors the docs-facing filter behavior.
+	if t, ok := act["type"].(float64); ok && int(t) == 2 {
+		return true
+	}
+	if name, ok := act["name"].(string); ok && name == "Spotify" {
+		return true
+	}
+	return false
+}
+
+func buildPublicPresence(p PresenceData) PublicPresence {
+	active := p.ActiveClients
+	if active == nil {
+		active = []string{}
+	}
+
+	filtered := make([]Activity, 0, len(p.Activities))
+	for _, a := range p.Activities {
+		if isSpotifyActivity(map[string]any(a)) {
+			continue
+		}
+		filtered = append(filtered, a)
+	}
+
+	return PublicPresence{
+		Status:      p.DiscordStatus,
+		Clients:     PublicClients{Active: active, Primary: p.PrimaryActiveClient},
+		Activities:  filtered,
+		Spotify:     p.Spotify,
+		DiscordUser: p.DiscordUser,
+	}
+}
+
+func normalizePresence(p PresenceData) PresenceData {
+	// Ensure cached public snapshot is always in sync.
+	p.Public = buildPublicPresence(p)
+	return p
 }
 
 type PrettyPresence struct {
@@ -161,6 +222,7 @@ func (s *PresenceStore) Count() int {
 }
 
 func (s *PresenceStore) SetPresence(userID string, presence PresenceData) {
+	presence = normalizePresence(presence)
 	s.mu.Lock()
 	s.data[userID] = presence
 	s.mu.Unlock()
@@ -169,6 +231,7 @@ func (s *PresenceStore) SetPresence(userID string, presence PresenceData) {
 
 // SetPresenceQuiet updates presence without broadcasting (for staged updates).
 func (s *PresenceStore) SetPresenceQuiet(userID string, presence PresenceData) {
+	presence = normalizePresence(presence)
 	s.mu.Lock()
 	s.data[userID] = presence
 	s.mu.Unlock()
@@ -185,6 +248,7 @@ func (s *PresenceStore) UpdatePresenceQuiet(userID string, update func(PresenceD
 		current = PresenceData{DiscordStatus: "offline"}
 	}
 	updated := update(current)
+	updated = normalizePresence(updated)
 	s.data[userID] = updated
 	s.mu.Unlock()
 }

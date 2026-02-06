@@ -79,6 +79,23 @@ No strict schedule. Patch/minor updates as needed; major versions only for break
 
 ---
 
+## Release Tagging (CI)
+
+The repository's GitHub Actions workflow for publishing Docker images expects semantic version tags of the form `vMAJOR.MINOR.PATCH` (for example `v1.0.0`). The workflow at `.github/workflows/docker-publish.yml` matches tags using the pattern `v*.*.*` and uses `docker/metadata-action` to generate image tags from the semver components (`{{version}}`, `{{major}}.{{minor}}`, and `{{major}}`).
+
+The metadata action therefore produces image tags like `1.0.0`, `1.0`, and `1` derived from the Git tag, followed by a `latest` tag that always points to the most recent semver release. API URLs continue to use `/v1/`; the `/v1/` prefix is the stable major version regardless of what the `latest` Docker image is (for example, a `v1.9.12` release can coincide with the `latest` image).
+
+Examples:
+
+```bash
+git tag -a v1.0.0 -m "V1.0.0 release"
+git push origin main
+git push origin v1.0.0
+```
+
+Lightweight tags such as `v1` do not match the `v*.*.*` pattern and will not trigger the Docker publish workflow.
+
+
 
 ## Need help?
 

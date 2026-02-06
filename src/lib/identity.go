@@ -24,12 +24,13 @@ func buildDiscordUser(u *discordgo.User) store.DiscordUser {
 	}).Debug("Building Discord user from discordgo.User")
 
 	du := store.DiscordUser{
-		ID:          u.ID,
-		Username:    u.Username,
-		Avatar:      u.Avatar,
-		PublicFlags: int(u.PublicFlags),
-		GlobalName:  u.GlobalName,
+		ID:             u.ID,
+		Username:       u.Username,
+		Avatar:         u.Avatar,
+		PublicFlagsRaw: int(u.PublicFlags),
+		GlobalName:     u.GlobalName,
 	}
+	du.PublicFlags = utils.PublicFlagsToNames(du.PublicFlagsRaw)
 
 	// Generate avatar URL (discriminator not used anymore)
 	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, "")
@@ -52,7 +53,8 @@ func MergeDiscordUser(base store.DiscordUser, incoming store.DiscordUser) store.
 	base.PrimaryGuild = utils.MergeAnyField(base.PrimaryGuild, incoming.PrimaryGuild)
 	base.Collectibles = utils.MergeAnyField(base.Collectibles, incoming.Collectibles)
 	base.DisplayNameStyles = utils.MergeAnyField(base.DisplayNameStyles, incoming.DisplayNameStyles)
-	base.PublicFlags = utils.MergeIntField(base.PublicFlags, incoming.PublicFlags)
+	base.PublicFlagsRaw = utils.MergeIntField(base.PublicFlagsRaw, incoming.PublicFlagsRaw)
+	base.PublicFlags = utils.PublicFlagsToNames(base.PublicFlagsRaw)
 
 	// Regenerate avatar URL after merging avatar fields
 	base.AvatarURL = utils.BuildAvatarURL(base.ID, base.Avatar, "")
@@ -146,12 +148,13 @@ func discordUserFromRaw(user map[string]any, member map[string]any) store.Discor
 		Username:             utils.GetString(user["username"]),
 		GlobalName:           utils.GetString(user["global_name"]),
 		Avatar:               utils.GetString(user["avatar"]),
-		PublicFlags:          utils.ExtractIntField(user, "public_flags"),
+		PublicFlagsRaw:       utils.ExtractIntField(user, "public_flags"),
 		AvatarDecorationData: utils.EnrichAvatarDecorationData(user["avatar_decoration_data"]),
 		PrimaryGuild:         utils.EnrichPrimaryGuildData(user["primary_guild"]),
 		Collectibles:         user["collectibles"],
 		DisplayNameStyles:    user["display_name_styles"],
 	}
+	du.PublicFlags = utils.PublicFlagsToNames(du.PublicFlagsRaw)
 
 	// Member-level overrides
 	if member != nil {

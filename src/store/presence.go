@@ -45,16 +45,17 @@ type PublicPresence struct {
 
 // DiscordUser contains the minimal public Discord user fields Tether relays.
 type DiscordUser struct {
-	ID                   string `json:"id,omitempty"`
-	Username             string `json:"username,omitempty"`
-	GlobalName           string `json:"global_name,omitempty"`
-	Avatar               string `json:"avatar,omitempty"`
-	AvatarURL            string `json:"avatar_url,omitempty"`
-	AvatarDecorationData any    `json:"avatar_decoration_data"`
-	PrimaryGuild         any    `json:"primary_guild"`
-	Collectibles         any    `json:"collectibles"`
-	DisplayNameStyles    any    `json:"display_name_styles"`
-	PublicFlags          int    `json:"public_flags"`
+	ID                   string   `json:"id,omitempty"`
+	Username             string   `json:"username,omitempty"`
+	GlobalName           string   `json:"global_name,omitempty"`
+	Avatar               string   `json:"avatar,omitempty"`
+	AvatarURL            string   `json:"avatar_url,omitempty"`
+	AvatarDecorationData any      `json:"avatar_decoration_data"`
+	PrimaryGuild         any      `json:"primary_guild"`
+	Collectibles         any      `json:"collectibles"`
+	DisplayNameStyles    any      `json:"display_name_styles"`
+	PublicFlagsRaw       int      `json:"-"`
+	PublicFlags          []string `json:"public_flags"`
 }
 
 type PresenceData struct {

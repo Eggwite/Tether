@@ -90,7 +90,7 @@ Represents the current presence state of a Discord user.
     },
     "collectibles": null,
     "display_name_styles": null,
-    "public_flags": 64
+    "public_flags": ["House_Bravery"]
   },
   "spotify": {
     "track_id": "32zpHDchUY83w80C8mMtOs",
@@ -145,7 +145,7 @@ type DiscordUser struct {
     GlobalName          string            `json:"global_name"`
     Avatar              string            `json:"avatar"`
     AvatarURL           string            `json:"avatar_url"`
-    PublicFlags         int               `json:"public_flags"`
+    PublicFlags         []string          `json:"public_flags"`
     AvatarDecoration    *AvatarDecoration `json:"avatar_decoration_data,omitempty"`
     PrimaryGuild        *PrimaryGuild     `json:"primary_guild,omitempty"`
 }
@@ -210,7 +210,7 @@ Represents basic Discord user identity information.
 | `avatar`       | string, optional  | The user’s avatar hash.                                                    |
 | `avatar_url`   | string, optional  | The URL to the user’s avatar image.                                        |
 | `display_name_styles` | any, optional | Optional display name styling metadata. |
-| `public_flags` | integer           | Public flags associated with the user.                                     |
+| `public_flags` | array of string   | Public flags associated with the user, translated to semantic labels.     |
 
 <Tabs items={["JSON", "Go"]}>
   <Tab>
@@ -222,7 +222,7 @@ Represents basic Discord user identity information.
   "global_name": "Example User",
   "avatar": "example_avatar_hash",
   "avatar_url": "https://example.com/avatar.jpg",
-  "public_flags": 64
+  "public_flags": ["House_Bravery"]
 }
 ```
 
@@ -236,7 +236,7 @@ type DiscordUser struct {
     GlobalName    string `json:"global_name,omitempty"`
     Avatar        string `json:"avatar,omitempty"`
     AvatarURL     string `json:"avatar_url,omitempty"`
-    PublicFlags   int    `json:"public_flags"`
+    PublicFlags   []string `json:"public_flags"`
 }
 ```
 

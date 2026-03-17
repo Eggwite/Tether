@@ -65,6 +65,7 @@ type PresenceData struct {
 	ActiveOnDiscordDesktop  bool `json:"-"`
 	ActiveOnDiscordWeb      bool `json:"-"`
 	ActiveOnDiscordEmbedded bool `json:"-"`
+	ActiveOnDiscordVR       bool `json:"-"`
 	// Derived convenience fields summarizing active clients.
 	ActiveClients         []string    `json:"active_clients,omitempty"`
 	PrimaryActiveClient   string      `json:"primary_active_client,omitempty"`

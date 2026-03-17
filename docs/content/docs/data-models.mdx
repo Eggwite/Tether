@@ -15,7 +15,7 @@ Represents the current presence state of a Discord user.
 |------------------------|-----------------------|-------------------------------------------------------------------------------------------------|
 | `status`               | string               | **Allowed values**: `online`, `idle`, `dnd`, `offline`.                                        |
 | `activities`           | array of object      | A list of active Discord activities, including detailed fields like `emoji`, `assets`, and `timestamps`. |
-| `clients`              | object                | An object grouping client information. Contains `active` (array of string) and `primary` (string). |
+| `clients`              | object                | An object grouping client information. Contains `active` (array of string; e.g. `desktop`, `mobile`, `web`, `embedded`, `vr`) and `primary` (string). |
 | `discord_user`         | object               | Basic Discord user identity information, including `avatar_decoration_data` and `primary_guild`. |
 | `spotify`              | object or null       | Present only when the user is actively listening to Spotify.                                    |
 
@@ -65,7 +65,8 @@ Represents the current presence state of a Discord user.
   ],
   "clients": {
     "active": [
-      "desktop"
+      "desktop",
+      "vr"
     ],
     "primary": "desktop"
   },

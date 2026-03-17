@@ -158,6 +158,6 @@ The diagram represents the relational structure of the typical response presence
 |----------------|-------------|
 | Presence Object | The presence object represents the most recently observed state for a user, as reported by Discord. It may not always reflect the user’s exact real-time presence due to possible delays or missed updates from the Discord gateway |
 | spotify | The `spotify` object is populated when the user is actively listening to Spotify. If null, the gateway does not include Spotify information. |
-| primary_active_client | The `primary_active_client` will always be one of the active clients, if present. |
+| `primary_active_client` | The `primary_active_client` will always be one of the active clients (e.g. `desktop`, `mobile`, `web`, `embedded`, `vr`), if present. |
 | activities | The `activities` array may contain custom or third-party activities; its structure may change over time. |
 </Callout>

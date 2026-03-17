@@ -34,14 +34,18 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 		ActiveOnDiscordMobile:   utils.ClientStatusActive(clientStatus, "mobile"),
 		ActiveOnDiscordWeb:      utils.ClientStatusActive(clientStatus, "web"),
 		ActiveOnDiscordEmbedded: utils.ClientStatusActive(clientStatus, "embedded"),
+		ActiveOnDiscordVR:       utils.ClientStatusActive(clientStatus, "vr"),
 		DiscordStatus:           status,
 	}
 
 	// Derive a higher-level list of active clients and pick a primary client
-	// using a fixed priority: desktop > mobile > web > embedded.
+	// using a fixed priority: desktop > vr > mobile > web > embedded.
 	var clients []string
 	if presence.ActiveOnDiscordDesktop {
 		clients = append(clients, "desktop")
+	}
+	if presence.ActiveOnDiscordVR {
+		clients = append(clients, "vr")
 	}
 	if presence.ActiveOnDiscordMobile {
 		clients = append(clients, "mobile")
@@ -55,7 +59,7 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 	presence.ActiveClients = clients
 	if len(clients) > 0 {
 		// priority order
-		for _, p := range []string{"desktop", "mobile", "web", "embedded"} {
+		for _, p := range []string{"desktop", "vr", "mobile", "web", "embedded"} {
 			if slices.Contains(clients, p) {
 				presence.PrimaryActiveClient = p
 			}

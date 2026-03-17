@@ -7,36 +7,8 @@ import (
 	"tether/src/store"
 	"tether/src/utils"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
-
-// buildDiscordUser constructs a DiscordUser from discordgo.User
-func buildDiscordUser(u *discordgo.User) store.DiscordUser {
-	if u == nil {
-		logging.Log.Warn("buildDiscordUser called with nil user")
-		return store.DiscordUser{}
-	}
-
-	logging.Log.WithFields(logrus.Fields{
-		"user_id":  u.ID,
-		"username": u.Username,
-	}).Debug("Building Discord user from discordgo.User")
-
-	du := store.DiscordUser{
-		ID:             u.ID,
-		Username:       u.Username,
-		Avatar:         u.Avatar,
-		PublicFlagsRaw: int(u.PublicFlags),
-		GlobalName:     u.GlobalName,
-	}
-	du.PublicFlags = utils.PublicFlagsToNames(du.PublicFlagsRaw)
-
-	// Generate avatar URL (discriminator not used anymore)
-	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, "")
-
-	return du
-}
 
 // MergeDiscordUser merges identity fields (canonical implementation).
 func MergeDiscordUser(base store.DiscordUser, incoming store.DiscordUser) store.DiscordUser {
@@ -53,89 +25,44 @@ func MergeDiscordUser(base store.DiscordUser, incoming store.DiscordUser) store.
 	base.PrimaryGuild = utils.MergeAnyField(base.PrimaryGuild, incoming.PrimaryGuild)
 	base.Collectibles = utils.MergeAnyField(base.Collectibles, incoming.Collectibles)
 	base.DisplayNameStyles = utils.MergeAnyField(base.DisplayNameStyles, incoming.DisplayNameStyles)
-	base.PublicFlagsRaw = utils.MergeIntField(base.PublicFlagsRaw, incoming.PublicFlagsRaw)
+	// public_flags should only be overwritten when explicitly present in the payload.
+	if incoming.PublicFlagsPresent {
+		base.PublicFlagsRaw = incoming.PublicFlagsRaw
+		base.PublicFlagsPresent = true
+	}
 	base.PublicFlags = utils.PublicFlagsToNames(base.PublicFlagsRaw)
 
 	// Regenerate avatar URL after merging avatar fields
-	base.AvatarURL = utils.BuildAvatarURL(base.ID, base.Avatar, "")
+	base.AvatarURL = BuildAvatarURL(base.ID, base.Avatar, "")
 
 	return base
 }
 
-// MergeRawUser extracts user/member data from raw JSON
+// MergeRawUser overlays identity fields onto a tracked user's presence entry.
+// Called on GUILD_MEMBER_ADD/UPDATE when Discord sends updated user data
+// without an accompanying presence event.
 func MergeRawUser(st *store.PresenceStore, raw json.RawMessage) {
-	logging.Log.Debug("Processing raw user data")
 	userMap, memberMap := utils.ExtractRawIdentity(raw)
 	if userMap == nil {
-		logging.Log.Warn("Failed to extract user identity from raw JSON")
-		return
-	}
-	mergeRawUserFromMaps(st, userMap, memberMap)
-}
-
-func mergeRawUserFromMaps(st *store.PresenceStore, userMap, memberMap map[string]any) {
-	if userMap == nil {
-		logging.Log.Debug("mergeRawUserFromMaps called with nil userMap")
+		logging.Log.Warn("MergeRawUser: failed to extract user identity from raw JSON")
 		return
 	}
 	userID := utils.ExtractStringField(userMap, "id")
 	if userID == "" {
-		logging.Log.Warn("User map missing required 'id' field")
+		logging.Log.Warn("MergeRawUser: user map missing required 'id' field")
 		return
 	}
 
-	logging.Log.WithField("user_id", userID).Debug("Merging raw user data")
-
-	du := discordUserFromRaw(userMap, memberMap)
+	incomingUser := discordUserFromRaw(userMap, memberMap)
 	st.UpdatePresenceQuiet(userID, func(prev store.PresenceData) store.PresenceData {
-		prev.DiscordUser = MergeDiscordUser(prev.DiscordUser, du)
+		prev.DiscordUser = MergeDiscordUser(prev.DiscordUser, incomingUser)
 		return prev
 	})
 
 	logging.Log.WithFields(logrus.Fields{
 		"user_id":  userID,
-		"username": du.Username,
-	}).Info("Raw user data merged successfully")
-}
-
-// MergeChunkRawMembers processes GUILD_MEMBERS_CHUNK member list
-func MergeChunkRawMembers(st *store.PresenceStore, raw json.RawMessage) {
-	logging.Log.Debug("Processing GUILD_MEMBERS_CHUNK")
-
-	payload, ok := utils.UnmarshalToMap(raw)
-	if !ok {
-		logging.Log.Error("Failed to unmarshal GUILD_MEMBERS_CHUNK payload")
-		return
-	}
-
-	membersVal, ok := payload["members"].([]any)
-	if !ok {
-		logging.Log.Warn("GUILD_MEMBERS_CHUNK missing 'members' array")
-		return
-	}
-
-	logging.Log.WithField("member_count", len(membersVal)).Info("Processing guild members chunk")
-
-	processedCount := 0
-	for _, entry := range membersVal {
-		memberMap, ok := entry.(map[string]any)
-		if !ok {
-			logging.Log.Debug("Skipping invalid member entry (not a map)")
-			continue
-		}
-		userMap, _ := memberMap["user"].(map[string]any)
-		if userMap == nil {
-			logging.Log.Debug("Skipping member entry with nil user")
-			continue
-		}
-		mergeRawUserFromMaps(st, userMap, memberMap)
-		processedCount++
-	}
-
-	logging.Log.WithFields(logrus.Fields{
-		"total_members":     len(membersVal),
-		"processed_members": processedCount,
-	}).Info("Guild members chunk processed")
+		"username": incomingUser.Username,
+	}).Info("user identity updated from member event")
 }
 
 // discordUserFromRaw builds DiscordUser from raw JSON maps
@@ -143,39 +70,35 @@ func discordUserFromRaw(user map[string]any, member map[string]any) store.Discor
 	userID := utils.ExtractStringField(user, "id")
 	logging.Log.WithField("user_id", userID).Debug("Building Discord user from raw JSON")
 
-	du := store.DiscordUser{
+	userData := store.DiscordUser{
 		ID:                   userID,
 		Username:             utils.GetString(user["username"]),
 		GlobalName:           utils.GetString(user["global_name"]),
 		Avatar:               utils.GetString(user["avatar"]),
 		PublicFlagsRaw:       utils.ExtractIntField(user, "public_flags"),
-		AvatarDecorationData: utils.EnrichAvatarDecorationData(user["avatar_decoration_data"]),
-		PrimaryGuild:         utils.EnrichPrimaryGuildData(user["primary_guild"]),
+		AvatarDecorationData: EnrichAvatarDecorationData(user["avatar_decoration_data"]),
+		PrimaryGuild:         EnrichPrimaryGuildData(user["primary_guild"]),
 		Collectibles:         user["collectibles"],
 		DisplayNameStyles:    user["display_name_styles"],
 	}
-	du.PublicFlags = utils.PublicFlagsToNames(du.PublicFlagsRaw)
+	_, userData.PublicFlagsPresent = user["public_flags"]
+	userData.PublicFlags = utils.PublicFlagsToNames(userData.PublicFlagsRaw)
 
 	// Member-level overrides
 	if member != nil {
 		logging.Log.WithField("user_id", userID).Debug("Applying member-level overrides")
 		// Check for member-level avatar override
 		if memberAvatar := utils.GetString(member["avatar"]); memberAvatar != "" {
-			du.Avatar = memberAvatar
+			userData.Avatar = memberAvatar
 		}
-		du.AvatarDecorationData = utils.MergeAnyField(du.AvatarDecorationData, utils.EnrichAvatarDecorationData(member["avatar_decoration_data"]))
-		du.PrimaryGuild = utils.MergeAnyField(du.PrimaryGuild, utils.EnrichPrimaryGuildData(member["primary_guild"]))
-		du.Collectibles = utils.MergeAnyField(du.Collectibles, member["collectibles"])
-		du.DisplayNameStyles = utils.MergeAnyField(du.DisplayNameStyles, member["display_name_styles"])
+		userData.AvatarDecorationData = utils.MergeAnyField(userData.AvatarDecorationData, EnrichAvatarDecorationData(member["avatar_decoration_data"]))
+		userData.PrimaryGuild = utils.MergeAnyField(userData.PrimaryGuild, EnrichPrimaryGuildData(member["primary_guild"]))
+		userData.Collectibles = utils.MergeAnyField(userData.Collectibles, member["collectibles"])
+		userData.DisplayNameStyles = utils.MergeAnyField(userData.DisplayNameStyles, member["display_name_styles"])
 	}
 
 	// Generate avatar URL after all overrides are applied
-	du.AvatarURL = utils.BuildAvatarURL(du.ID, du.Avatar, "")
+	userData.AvatarURL = BuildAvatarURL(userData.ID, userData.Avatar, "")
 
-	return du
-}
-
-// BuildDiscordUserFromRaw exposes raw identity parsing for callers that need to stage updates.
-func BuildDiscordUserFromRaw(user map[string]any, member map[string]any) store.DiscordUser {
-	return discordUserFromRaw(user, member)
+	return userData
 }

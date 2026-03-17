@@ -80,19 +80,9 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 		user = pickUserMap(user, member)
 	}
 
-	presence.DiscordUser = BuildDiscordUserFromRaw(user, member)
+	presence.DiscordUser = discordUserFromRaw(user, member)
 
 	return presence, userID, true
-}
-
-// hasSpotifyActivity checks whether any activity is Spotify so we can mark
-func hasSpotifyActivity(rawActivities []any) bool {
-	for _, item := range rawActivities {
-		if act, ok := item.(map[string]any); ok && utils.IsSpotifyActivity(act) {
-			return true
-		}
-	}
-	return false
 }
 
 // pickUserMap chooses the richest available user map, preferring member.user

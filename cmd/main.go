@@ -14,7 +14,6 @@ import (
 	"tether/src/middleware"
 	"tether/src/store"
 	"tether/src/utils"
-	"tether/src/utils/response"
 	"tether/src/version"
 	ws "tether/src/websocket"
 
@@ -48,7 +47,13 @@ func main() {
 	r.Handle("/socket", wsServer)
 	// Custom 404 handler for API routes
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		utils.WriteJSON(w, http.StatusNotFound, response.PageNotFound())
+		utils.WriteJSON(w, http.StatusNotFound, utils.ErrorResponse(
+			"PAGE_NOT_FOUND",
+			"Route does not exist",
+			http.StatusNotFound,
+			false,
+			nil,
+		))
 	})
 	// HTTP Server configuration
 	srv := &http.Server{

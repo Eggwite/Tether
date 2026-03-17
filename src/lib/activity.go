@@ -18,7 +18,7 @@ func patchActivitiesFromRaw(prev store.PresenceData, rawActivities []any) store.
 		if m, ok := rawItem.(map[string]any); ok {
 			// Enrich emoji with CDN link if present
 			if emoji, exists := m["emoji"]; exists {
-				m["emoji"] = utils.EnrichEmojiData(emoji)
+				m["emoji"] = EnrichEmojiData(emoji)
 			}
 			// Enrich activity asset URLs if present
 			if enriched := utils.EnrichActivityAssets(m); enriched != nil {
@@ -57,8 +57,11 @@ func UpsertChunkPresences(st *store.PresenceStore, raw json.RawMessage) {
 			continue
 		}
 
-		member := memberLookup[utils.ExtractUserID(pres)]
-		userMap := pres["user"].(map[string]any)
+		userMap, ok := pres["user"].(map[string]any)
+		if !ok {
+			continue
+		}
+		member := memberLookup[utils.ExtractStringField(userMap, "id")]
 		presence, userID, ok := BuildPresenceFromRaw(pres, userMap, member)
 		if !ok {
 			if userID != "" {

@@ -55,6 +55,7 @@ type DiscordUser struct {
 	Collectibles         any      `json:"collectibles"`
 	DisplayNameStyles    any      `json:"display_name_styles"`
 	PublicFlagsRaw       int      `json:"-"`
+	PublicFlagsPresent   bool     `json:"-"`
 	PublicFlags          []string `json:"public_flags"`
 }
 

@@ -23,6 +23,13 @@ import (
 var rawLogCount int32
 var latencySamples utils.LatencyRing
 
+// Gateway event counters – incremented atomically, never reset.
+var (
+	evPresenceUpdates atomic.Int64
+	evMemberUpdates   atomic.Int64
+	evChunkEvents     atomic.Int64
+)
+
 const rawLogLimit int32 = 3
 
 // Launch connects to Discord when a token is provided; otherwise it no-ops.
@@ -59,17 +66,19 @@ func Launch(token string, st *store.PresenceStore) (*discordgo.Session, error) {
 		}
 		switch ev.Type {
 		case "PRESENCE_UPDATE":
+			evPresenceUpdates.Add(1)
 			logGatewayEvent("PRESENCE_UPDATE", ev.RawData)
 			handleRawPresence(st, ev.RawData)
 		case "GUILD_MEMBER_ADD", "GUILD_MEMBER_UPDATE":
+			evMemberUpdates.Add(1)
 			logGatewayEvent(ev.Type, ev.RawData)
 			lib.MergeRawUser(st, ev.RawData)
 		case "GUILD_MEMBER_REMOVE":
 			logGatewayEvent(ev.Type, ev.RawData)
 			handleRawMemberRemove(st, ev.RawData)
 		case "GUILD_MEMBERS_CHUNK":
+			evChunkEvents.Add(1)
 			logGatewayEvent(ev.Type, ev.RawData)
-			lib.MergeChunkRawMembers(st, ev.RawData)
 			lib.UpsertChunkPresences(st, ev.RawData)
 		}
 	})
@@ -268,17 +277,16 @@ func handleInteractions(st *store.PresenceStore, admins map[string]struct{}, sta
 			p99 := latencySamples.P99().Round(time.Millisecond)
 			apiP99 := middleware.APIP99().Round(time.Millisecond)
 			wsP99 := wsmetrics.MessageP99().Round(time.Millisecond)
-			latMs := lat.Milliseconds()
-			p99Ms := p99.Milliseconds()
-			apiMs := apiP99.Milliseconds()
-			wsMs := wsP99.Milliseconds()
 			_ = s.InteractionRespond(ic.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Flags: discordgo.MessageFlagsEphemeral,
 					Content: fmt.Sprintf(
-						"Gateway latency: %d ms (p99 last 100: %d ms)\nHTTP p99 (last 100): %d ms\nWS send p99 (last 100): %d ms",
-						latMs, p99Ms, apiMs, wsMs,
+						"Gateway: %d ms (p99: %d ms) | %d presence / %d member / %d chunk events\nHTTP: p99 %d ms | %d requests total\nWS send: p99 %d ms",
+						lat.Milliseconds(), p99.Milliseconds(),
+						evPresenceUpdates.Load(), evMemberUpdates.Load(), evChunkEvents.Load(),
+						apiP99.Milliseconds(), middleware.APIRequestCount(),
+						wsP99.Milliseconds(),
 					),
 				},
 			})
@@ -306,21 +314,40 @@ func startStatusAndLatencyLoop(s *discordgo.Session, st *store.PresenceStore) fu
 	if s == nil {
 		return nil
 	}
-	ticker := time.NewTicker(30 * time.Second)
+	statusTicker := time.NewTicker(30 * time.Second)
+	metricsTicker := time.NewTicker(5 * time.Minute)
 	stop := make(chan struct{})
 	go func() {
-		defer ticker.Stop()
+		defer statusTicker.Stop()
+		defer metricsTicker.Stop()
 		for {
 			select {
-			case <-ticker.C:
+			case <-statusTicker.C:
 				updateBotStatus(s, st)
 				recordLatencySample(s)
+			case <-metricsTicker.C:
+				logMetrics(s, st)
 			case <-stop:
 				return
 			}
 		}
 	}()
 	return func() { close(stop) }
+}
+
+// logMetrics emits a single structured log line with a full system snapshot.
+func logMetrics(s *discordgo.Session, st *store.PresenceStore) {
+	logging.Log.WithFields(logrus.Fields{
+		"gateway_latency_ms":  s.HeartbeatLatency().Round(time.Millisecond).Milliseconds(),
+		"gateway_p99_ms":      latencySamples.P99().Round(time.Millisecond).Milliseconds(),
+		"http_requests":       middleware.APIRequestCount(),
+		"http_p99_ms":         middleware.APIP99().Round(time.Millisecond).Milliseconds(),
+		"ws_send_p99_ms":      wsmetrics.MessageP99().Round(time.Millisecond).Milliseconds(),
+		"tracked_presences":   st.Count(),
+		"ev_presence_updates": evPresenceUpdates.Load(),
+		"ev_member_updates":   evMemberUpdates.Load(),
+		"ev_chunk_events":     evChunkEvents.Load(),
+	}).Info("metrics snapshot")
 }
 
 func recordLatencySample(s *discordgo.Session) {

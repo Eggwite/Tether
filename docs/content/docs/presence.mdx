@@ -161,3 +161,8 @@ The diagram represents the relational structure of the typical response presence
 | `primary_active_client` | The `primary_active_client` will always be one of the active clients (e.g. `desktop`, `mobile`, `web`, `embedded`, `vr`), if present. |
 | activities | The `activities` array may contain custom or third-party activities; its structure may change over time. |
 </Callout>
+
+<Callout title="Offline snapshots">
+When the bot starts it requests guild members and processes `GUILD_MEMBERS_CHUNK` payloads. Discord's `presences[]` typically contains only online/active members; Tether will create default `offline` snapshots for members included in the `members[]` array so offline users are tracked and available via API and WebSocket once the chunk is processed.
+
+</Callout>

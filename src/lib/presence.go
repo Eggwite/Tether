@@ -10,7 +10,7 @@ import (
 
 // BuildPresenceFromRaw constructs a PresenceData snapshot directly from a raw Gateway payload.
 // It avoids discordgo structs so fields that discordgo omits (sync_id, etc.) remain intact.
-// Returns presence, userID, ok (false when user is missing or the status is offline).
+// Returns presence, userID, ok (false when user identity is missing).
 func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member map[string]any) (store.PresenceData, string, bool) {
 	userID := utils.ExtractUserID(payload)
 	if userID == "" && user != nil {
@@ -22,7 +22,7 @@ func BuildPresenceFromRaw(payload map[string]any, user map[string]any, member ma
 		status = "offline"
 	}
 
-	if userID == "" || status == "offline" {
+	if userID == "" {
 		return store.PresenceData{}, userID, false
 	}
 

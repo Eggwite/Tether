@@ -39,6 +39,7 @@ func patchActivitiesFromRaw(prev store.PresenceData, rawActivities []any) store.
 
 // UpsertChunkPresences replaces presence snapshots from a GUILD_MEMBERS_CHUNK raw payload.
 // It builds presences directly from raw maps to retain all fields and avoids discordgo structs.
+// Offline members (present in members[] but absent from presences[]) get default offline snapshots.
 func UpsertChunkPresences(st *store.PresenceStore, raw json.RawMessage) {
 	payload, ok := utils.UnmarshalToMap(raw)
 	if !ok {
@@ -48,9 +49,12 @@ func UpsertChunkPresences(st *store.PresenceStore, raw json.RawMessage) {
 	memberLookup := buildMemberLookup(payload)
 	rawPresences, ok := payload["presences"].([]any)
 	if !ok {
-		return
+		rawPresences = []any{}
 	}
 
+	processedUserIDs := make(map[string]struct{})
+
+	// Process explicit presences from the chunk
 	for _, item := range rawPresences {
 		pres, ok := item.(map[string]any)
 		if !ok {
@@ -61,7 +65,8 @@ func UpsertChunkPresences(st *store.PresenceStore, raw json.RawMessage) {
 		if !ok {
 			continue
 		}
-		member := memberLookup[utils.ExtractStringField(userMap, "id")]
+		userID := utils.ExtractStringField(userMap, "id")
+		member := memberLookup[userID]
 		presence, userID, ok := BuildPresenceFromRaw(pres, userMap, member)
 		if !ok {
 			if userID != "" {
@@ -72,6 +77,24 @@ func UpsertChunkPresences(st *store.PresenceStore, raw json.RawMessage) {
 
 		st.SetPresenceQuiet(userID, presence)
 		st.BroadcastPresence(userID)
+		processedUserIDs[userID] = struct{}{}
+	}
+
+	// Create default offline presences for members not in explicit presences array
+	for userID, member := range memberLookup {
+		if _, alreadyProcessed := processedUserIDs[userID]; alreadyProcessed {
+			continue
+		}
+
+		if userMap, ok := member["user"].(map[string]any); ok && userID != "" {
+			// Create minimal offline presence from member data
+			offlinePresence := store.PresenceData{
+				DiscordStatus: "offline",
+				DiscordUser:   discordUserFromRaw(userMap, member),
+			}
+			st.SetPresenceQuiet(userID, offlinePresence)
+			st.BroadcastPresence(userID)
+		}
 	}
 }
 

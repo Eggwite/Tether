@@ -1,5 +1,5 @@
 # Multi-stage build: compile Go binary, then copy into a minimal runtime image.
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.26.1-bookworm AS builder
 WORKDIR /app
 
 # Pre-fetch dependencies for better build caching.
